@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#eef1f5">
+<title>Zaraplast · Painel</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --fundo: #eef1f5; --cartao: #ffffff; --tinta: #18202b; --sutil: #5d6878; --apagado: #b5bdc8;
+    --linha: #dde2ea; --azul: #1d5fa6; --azul-claro: #e3edf8; --ok: #17803d; --aviso: #b26b00; --erro: #c62828;
+    --display: "Bahnschrift", "DIN Alternate", "Segoe UI", system-ui, sans-serif;
+    --texto: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--fundo); color: var(--tinta); font: 15px/1.4 var(--texto); }
+  main { max-width: 1200px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+  h1, h2 { font-family: var(--display); font-weight: 600; margin: 0; }
+  h1 { font-size: 22px; }
+  h2 { font-size: 17px; margin-bottom: 10px; }
+  .sutil { color: var(--sutil); }
+  .cartao { background: var(--cartao); border: 1px solid var(--linha); border-radius: 12px; padding: 16px; min-width: 0; }
+
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+  .marca { color: var(--azul); }
+  .estado { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sutil); }
+  .ponto { width: 9px; height: 9px; border-radius: 50%; background: var(--apagado); flex: none; }
+  .ponto.on { background: var(--ok); } .ponto.aviso { background: var(--aviso); } .ponto.erro { background: var(--erro); }
+
+  /* linha de produção: etapas com a fila entre elas */
+  .linha { display: flex; align-items: stretch; gap: 0; }
+  .etapa { flex: 1 1 0; background: var(--cartao); border: 1px solid var(--linha); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+  .etapa .n { font: 600 48px/1 var(--display); margin: 6px 0 2px; }
+  .etapa .n.zero { color: var(--apagado); }
+  .entre { flex: 0 0 auto; display: grid; place-items: center; padding: 0 8px; }
+  .chip { font-size: 13px; border-radius: 99px; padding: 4px 10px; background: var(--fundo); color: var(--sutil); white-space: nowrap; border: 1px dashed var(--apagado); }
+  .chip.tem { background: var(--azul-claro); color: var(--azul); border-color: var(--azul); }
+  .chip b { font-family: var(--display); font-size: 15px; margin-right: 3px; }
+
+  .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+  .postos { display: grid; gap: 10px; }
+  .posto { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--linha); }
+  .posto:first-child { border-top: 0; padding-top: 0; }
+  .posto .titulo { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .posto .conta { grid-row: span 3; text-align: right; font: 600 32px/1 var(--display); color: var(--azul); }
+  .posto .conta small { display: block; font: 12px var(--texto); color: var(--sutil); margin-top: 4px; }
+  .posto .conta.zero { color: var(--apagado); }
+
+  ul.leituras { list-style: none; margin: 0; padding: 0; max-height: 520px; overflow: auto; }
+  .leituras li { display: grid; grid-template-columns: 44px 12px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--linha); }
+  .leituras li:first-child { border-top: 0; }
+  .leituras li.novo { animation: novo 1.5s ease-out; }
+  @keyframes novo { from { background: #fff4c2; } to { background: transparent; } }
+  .leituras .hora { color: var(--sutil); font-variant-numeric: tabular-nums; }
+  .leituras .ponto { margin-top: 6px; }
+  .leituras .cod { font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 7px 6px; border-top: 1px solid var(--linha); font-variant-numeric: tabular-nums; }
+  th { font-weight: 500; color: var(--sutil); font-size: 13px; border-top: 0; }
+  td.n, th.n { text-align: right; }
+  td.forte { font: 600 18px var(--display); }
+
+  .barras { display: flex; align-items: flex-end; gap: 6px; height: 140px; padding-top: 8px; }
+  .barra { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; }
+  .barra i { display: block; width: 100%; max-width: 40px; background: var(--azul); border-radius: 6px 6px 0 0; min-height: 2px; }
+  .barra span { font-size: 12px; color: var(--sutil); margin-top: 4px; }
+  .barra b { font: 600 13px var(--display); margin-bottom: 3px; }
+
+  .vazio { color: var(--sutil); padding: 6px 0; }
+  .entrar { max-width: 360px; margin: 12vh auto; display: grid; gap: 12px; }
+  .entrar input { font: inherit; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 8px; }
+  .entrar button { font: 600 15px var(--texto); padding: 10px; border: 0; border-radius: 8px; background: var(--azul); color: #fff; cursor: pointer; }
+  .erro-msg { color: var(--erro); min-height: 1.4em; }
+  :focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+  @media (max-width: 700px) {
+    main { padding: 12px; gap: 12px; }
+    .linha { flex-direction: column; }
+    .entre { padding: 6px 0; }
+    .etapa .n { font-size: 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .leituras li.novo { animation: none; } }
+</style>
+</head>
+<body>
+<div id="tela-senha" class="cartao entrar" hidden>
+  <h1><span class="marca">Zaraplast</span> · Painel</h1>
+  <label for="senha" class="sutil">Senha do painel</label>
+  <input id="senha" type="password" autocomplete="current-password">
+  <button id="entrar" type="button">Entrar</button>
+  <div id="erro-senha" class="erro-msg" role="alert"></div>
+</div>
+
+<main id="painel" hidden>
+  <header>
+    <h1><span class="marca">Zaraplast</span> · Painel da produção</h1>
+    <span class="estado" role="status"><span id="ponto-geral" class="ponto"></span><span id="atualizado">conectando…</span></span>
+  </header>
+
+  <section aria-label="Linha de costura" id="linha" class="linha"></section>
+
+  <div class="grade">
+    <section class="cartao" aria-labelledby="t-postos">
+      <h2 id="t-postos">Postos</h2>
+      <div id="postos" class="postos"></div>
+    </section>
+    <section class="cartao" aria-labelledby="t-leituras">
+      <h2 id="t-leituras">Últimas leituras</h2>
+      <ul id="leituras" class="leituras"></ul>
+    </section>
+  </div>
+
+  <div class="grade">
+    <section class="cartao" aria-labelledby="t-pessoas">
+      <h2 id="t-pessoas">Produção por pessoa hoje</h2>
+      <div id="pessoas"></div>
+    </section>
+    <section class="cartao" aria-labelledby="t-hora">
+      <h2 id="t-hora">Bags por hora hoje</h2>
+      <div id="por-hora"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const API = 'https://bdkcvudqavhlxdvmjzgn.supabase.co/functions/v1/api/painel';
+  const CHAVE = 'zaraplast-painel-senha';
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  const ler = () => { try { return localStorage.getItem(CHAVE) || ''; } catch { return ''; } };
+  const gravar = (v) => { try { v ? localStorage.setItem(CHAVE, v) : localStorage.removeItem(CHAVE); } catch {} };
+
+  const ROTULO = { ok: 'registrado', cracha_entrada: 'entrada', cracha_saida: 'saída', pulou_etapa: 'pulou etapa',
+                   repetido: 'repetido', sem_operador: 'sem operador', desconhecido: 'desconhecido' };
+  const NIVEL = { ok: 'on', cracha_entrada: 'on', cracha_saida: 'on', pulou_etapa: 'aviso' };
+  // o servidor manda mensagens sem acento (cabem em qualquer display de posto)
+  const ACENTOS = [[/\bJa\b/g, 'Já'], [/\besta\b/g, 'está'], [/\bas (\d)/g, 'às $1'], [/\bCracha\b/g, 'Crachá'],
+    [/\bcracha\b/g, 'crachá'], [/\bnao\b/g, 'não'], [/\bAte\b/g, 'Até'], [/\bOla\b/g, 'Olá'],
+    [/\binvalida\b/g, 'inválida'], [/\bCodigo\b/g, 'Código']];
+  const acentuar = (t) => ACENTOS.reduce((s, [re, n]) => s.replace(re, n), String(t ?? ''));
+  const hora = (iso) => (iso || '').slice(11, 16);
+  const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+
+  let senha = ler(), timer = null, ultimaChave = null;
+
+  function mostrarSenha(msg) {
+    $('painel').hidden = true;
+    $('tela-senha').hidden = false;
+    $('erro-senha').textContent = msg || '';
+    $('senha').focus();
+  }
+
+  async function atualizar() {
+    clearTimeout(timer);
+    try {
+      const r = await fetch(API, { headers: { 'X-Painel-Senha': senha }, cache: 'no-store' });
+      if (r.status === 401) { gravar(''); senha = ''; mostrarSenha('Senha incorreta.'); return; }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      $('tela-senha').hidden = true;
+      $('painel').hidden = false;
+      desenhar(d);
+      $('ponto-geral').className = 'ponto on';
+      $('atualizado').textContent = `atualizado às ${hora(d.gerado_em)}`;
+    } catch (e) {
+      $('ponto-geral').className = 'ponto erro';
+      $('atualizado').textContent = 'sem conexão com o servidor, tentando de novo…';
+    }
+    if (!document.hidden) timer = setTimeout(atualizar, 3000);
+  }
+
+  function desenhar(d) {
+    desenharLinha(d.etapas || [], d.fila || []);
+    desenharPostos(d.postos || []);
+    desenharLeituras(d.leituras || []);
+    desenharPessoas(d.pessoas || []);
+    desenharHoras(d.por_hora || []);
+  }
+
+  function desenharLinha(etapas, fila) {
+    const alvo = $('linha');
+    alvo.replaceChildren();
+    etapas.forEach((e, i) => {
+      if (i > 0) {
+        const f = fila.find((x) => x.para === e.nome);
+        const n = f ? f.bags : 0;
+        const entre = el('div', 'entre');
+        const chip = el('span', `chip${n ? ' tem' : ''}`);
+        if (n) chip.append(el('b', null, n), document.createTextNode(n === 1 ? 'aguardando' : 'aguardando'));
+        else chip.textContent = 'sem fila';
+        chip.title = `Bags que passaram em ${f ? f.de : ''} e ainda não em ${e.nome}`;
+        entre.append(chip);
+        alvo.append(entre);
+      }
+      const c = el('article', 'etapa');
+      c.append(el('div', 'sutil', e.nome), el('div', `n${e.bags ? '' : ' zero'}`, e.bags),
+               el('div', 'sutil', `${e.bags === 1 ? 'bag hoje' : 'bags hoje'}${e.ocorrencias ? ` · ${plural(e.ocorrencias, 'ocorrência', 'ocorrências')}` : ''}`));
+      alvo.append(c);
+    });
+  }
+
+  function desenharPostos(postos) {
+    const alvo = $('postos');
+    if (!postos.length) { alvo.replaceChildren(el('p', 'vazio', 'Nenhum posto cadastrado.')); return; }
+    alvo.replaceChildren(...postos.map((p) => {
+      const pn = p.painel || {};
+      const div = el('div', 'posto');
+      const t = el('div', 'titulo');
+      t.append(el('span', `ponto${p.online ? ' on' : ''}`), document.createTextNode(`Posto ${p.id}`),
+               el('span', 'sutil', `· ${p.etapa}`));
+      const conta = el('div', `conta${pn.operador && pn.bags_turno ? '' : ' zero'}`, pn.operador ? pn.bags_turno : '—');
+      conta.append(el('small', null, pn.operador ? 'no turno' : ''));
+      div.append(t, conta);
+      div.append(el('div', null, pn.operador ? `${pn.operador}, desde ${hora(pn.turno_inicio)}` : 'Livre, sem operador'));
+      const ul = p.ultima_leitura;
+      const st = p.online ? 'ligado' : (p.ultimo_contato ? `desligado (visto às ${hora(p.ultimo_contato)})` : 'nunca conectou');
+      div.append(el('div', 'sutil', ul ? `${st} · última: ${ul.codigo} ${ROTULO[ul.resultado] || ul.resultado} às ${hora(ul.horario)}` : st));
+      return div;
+    }));
+  }
+
+  function desenharLeituras(itens) {
+    const alvo = $('leituras');
+    if (!itens.length) { alvo.replaceChildren(el('li', 'vazio', 'Nenhuma leitura ainda.')); return; }
+    const chave = (l) => `${l.horario}|${l.posto}|${l.codigo}`;
+    const anterior = ultimaChave;
+    let novo = anterior !== null;
+    alvo.replaceChildren(...itens.map((l) => {
+      if (chave(l) === anterior) novo = false;
+      const li = el('li', novo ? 'novo' : '');
+      const corpo = el('div');
+      const l1 = el('div');
+      l1.append(el('span', 'cod', l.codigo), document.createTextNode(`  ${ROTULO[l.resultado] || l.resultado}`));
+      const det = [`posto ${l.posto}`, l.operador, ['ok', 'cracha_entrada', 'cracha_saida'].includes(l.resultado) ? '' : acentuar(l.mensagem)];
+      corpo.append(l1, el('div', 'sutil', det.filter(Boolean).join(' · ')));
+      li.append(el('span', 'hora', hora(l.horario)), el('span', `ponto ${NIVEL[l.resultado] || 'erro'}`), corpo);
+      return li;
+    }));
+    ultimaChave = chave(itens[0]);
+  }
+
+  function desenharPessoas(pessoas) {
+    const alvo = $('pessoas');
+    if (!pessoas.length) { alvo.replaceChildren(el('p', 'vazio', 'Ninguém produziu ainda hoje.')); return; }
+    const t = el('table');
+    const cab = el('tr');
+    [['Operador', ''], ['Bags', 'n'], ['Por hora', 'n'], ['Repetidos', 'n'], ['Pulou etapa', 'n']]
+      .forEach(([txt, c]) => cab.append(el('th', c, txt)));
+    t.append(cab);
+    pessoas.forEach((p) => {
+      const tr = el('tr');
+      const nome = el('td');
+      nome.append(document.createTextNode(p.nome), el('div', 'sutil', `${p.primeiro}–${p.ultimo}`));
+      tr.append(nome, el('td', 'n forte', p.bags),
+                el('td', 'n', p.bags_hora == null ? '—' : String(p.bags_hora).replace('.', ',')),
+                el('td', 'n', p.repetidos), el('td', 'n', p.pulou));
+      t.append(tr);
+    });
+    alvo.replaceChildren(t);
+  }
+
+  function desenharHoras(horas) {
+    const alvo = $('por-hora');
+    if (!horas.length) { alvo.replaceChildren(el('p', 'vazio', 'O gráfico aparece quando o primeiro bag for registrado.')); return; }
+    const max = Math.max(...horas.map((h) => h.bags), 1);
+    const caixa = el('div', 'barras');
+    horas.forEach((h) => {
+      const b = el('div', 'barra');
+      const i = el('i');
+      i.style.height = `${Math.round((h.bags / max) * 100)}%`;
+      b.append(el('b', null, h.bags), i, el('span', null, `${h.hora}h`));
+      b.title = `${plural(h.bags, 'bag', 'bags')} das ${h.hora}h às ${h.hora + 1}h`;
+      caixa.append(b);
+    });
+    alvo.replaceChildren(caixa);
+  }
+
+  $('entrar').addEventListener('click', () => { senha = $('senha').value.trim(); gravar(senha); atualizar(); });
+  $('senha').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('entrar').click(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && senha) atualizar(); });
+
+  // senha também pode vir no link: .../#senha=xxxx (não vai para o servidor nem para o histórico de buscas)
+  const m = location.hash.match(/senha=([^&]+)/);
+  if (m) { senha = decodeURIComponent(m[1]); gravar(senha); history.replaceState(null, '', location.pathname); }
+  if (senha) atualizar(); else mostrarSenha();
+})();
+</script>
+</body>
+</html>
