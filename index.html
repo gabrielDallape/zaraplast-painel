@@ -51,6 +51,7 @@
   ul.leituras { list-style: none; margin: 0; padding: 0; max-height: 520px; overflow: auto; }
   .leituras li { display: grid; grid-template-columns: 44px 12px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--linha); }
   .leituras li:first-child { border-top: 0; }
+  .leituras li.vazio { display: block; }
   .leituras li.novo { animation: novo 1.5s ease-out; }
   @keyframes novo { from { background: #fff4c2; } to { background: transparent; } }
   .leituras .hora { color: var(--sutil); font-variant-numeric: tabular-nums; }
@@ -75,6 +76,22 @@
   .entrar button { font: 600 15px var(--texto); padding: 10px; border: 0; border-radius: 8px; background: var(--azul); color: #fff; cursor: pointer; }
   .erro-msg { color: var(--erro); min-height: 1.4em; }
   :focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+  footer { display: flex; justify-content: flex-end; padding-bottom: 8px; }
+  .botao-perigo { font: 500 14px var(--texto); padding: 8px 14px; border-radius: 8px; cursor: pointer;
+                  background: transparent; color: var(--erro); border: 1px solid #e8b4b4; }
+  .botao-perigo:hover { background: #fbe9e9; }
+  dialog { border: 0; border-radius: 12px; padding: 20px; max-width: 380px; width: calc(100% - 32px);
+           box-shadow: 0 10px 40px rgba(24, 32, 43, .25); color: var(--tinta); }
+  dialog::backdrop { background: rgba(24, 32, 43, .45); }
+  dialog h2 { margin-bottom: 8px; }
+  dialog form { display: grid; gap: 10px; }
+  dialog input { font: inherit; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 8px; }
+  .acoes { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+  .acoes button { font: 600 14px var(--texto); padding: 9px 14px; border-radius: 8px; cursor: pointer; border: 1px solid var(--linha); background: #fff; }
+  .acoes .confirmar { background: var(--erro); border-color: var(--erro); color: #fff; }
+  .acoes .confirmar:disabled { opacity: .6; cursor: wait; }
+  .aviso-zerado { color: var(--ok); font-size: 14px; margin-right: auto; align-self: center; }
 
   @media (max-width: 700px) {
     main { padding: 12px; gap: 12px; }
@@ -123,7 +140,26 @@
       <div id="por-hora"></div>
     </section>
   </div>
+
+  <footer>
+    <span id="aviso-zerado" class="aviso-zerado" role="status"></span>
+    <button id="abrir-zerar" class="botao-perigo" type="button">Zerar demonstração</button>
+  </footer>
 </main>
+
+<dialog id="dialogo-zerar" aria-labelledby="t-zerar">
+  <form id="form-zerar" method="dialog">
+    <h2 id="t-zerar">Zerar demonstração</h2>
+    <p class="sutil" style="margin:0">Apaga todas as leituras, bags registrados e turnos. Postos, crachás e senhas continuam. Não dá para desfazer.</p>
+    <label for="senha-admin" class="sutil">Senha de administrador</label>
+    <input id="senha-admin" type="password" autocomplete="off" required>
+    <div id="erro-zerar" class="erro-msg" role="alert"></div>
+    <div class="acoes">
+      <button type="button" id="cancelar-zerar">Cancelar</button>
+      <button type="submit" id="confirmar-zerar" class="confirmar">Apagar tudo</button>
+    </div>
+  </form>
+</dialog>
 
 <script>
 (() => {
@@ -279,6 +315,39 @@
     });
     alvo.replaceChildren(caixa);
   }
+
+  // ---------------------------------------------------------------- zerar demonstração
+  const URL_ZERAR = API.replace(/\/painel$/, '/zerar');
+  const dialogo = $('dialogo-zerar');
+  $('abrir-zerar').addEventListener('click', () => {
+    $('erro-zerar').textContent = '';
+    $('senha-admin').value = '';
+    dialogo.showModal();
+    $('senha-admin').focus();
+  });
+  $('cancelar-zerar').addEventListener('click', () => dialogo.close());
+  $('form-zerar').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const botao = $('confirmar-zerar');
+    botao.disabled = true;
+    botao.textContent = 'Apagando…';
+    try {
+      const r = await fetch(URL_ZERAR, { method: 'POST', headers: { 'X-Admin-Senha': $('senha-admin').value.trim() } });
+      if (r.status === 401) { $('erro-zerar').textContent = 'Senha de administrador incorreta.'; return; }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      dialogo.close();
+      ultimaChave = null;
+      $('aviso-zerado').textContent = `Zerado às ${hora(d.zerado_em)}: ${plural(d.leituras, 'leitura', 'leituras')}, `
+        + `${plural(d.passagens, 'passagem de bag', 'passagens de bag')} e ${plural(d.turnos, 'turno', 'turnos')} apagados.`;
+      atualizar();
+    } catch {
+      $('erro-zerar').textContent = 'Não consegui falar com o servidor. Tente de novo.';
+    } finally {
+      botao.disabled = false;
+      botao.textContent = 'Apagar tudo';
+    }
+  });
 
   $('entrar').addEventListener('click', () => { senha = $('senha').value.trim(); gravar(senha); atualizar(); });
   $('senha').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('entrar').click(); });
