@@ -3,154 +3,385 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#eef1f5">
-<title>Zaraplast · Painel</title>
-<link rel="icon" href="data:,">
+<meta name="theme-color" content="#23408e">
+<title>Zaraplast · Painel da produção</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='5' y='9' width='22' height='20' rx='3' fill='%2323408e'/%3E%3Cpath d='M10 9V4h4v5M18 9V4h4v5' stroke='%23f2b705' stroke-width='2.5' fill='none'/%3E%3C/svg%3E">
 <style>
+  /* Identidade: chão de fábrica de big bags. Fundo concreto, azul da fita de alça, amarelo de faixa de
+     segurança, costura tracejada ligando as etapas. Vermelho só para alarme (chamado aberto, bag repetido). */
   :root {
-    --fundo: #eef1f5; --cartao: #ffffff; --tinta: #18202b; --sutil: #5d6878; --apagado: #b5bdc8;
-    --linha: #dde2ea; --azul: #1d5fa6; --azul-claro: #e3edf8; --ok: #17803d; --aviso: #b26b00; --erro: #c62828;
-    --display: "Bahnschrift", "DIN Alternate", "Segoe UI", system-ui, sans-serif;
-    --texto: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    --concreto: #eceeea; --papel: #ffffff; --tinta: #1f2523; --sutil: #5b6460; --apagado: #a3aaa6;
+    --linha: #d6dad5; --fita: #23408e; --fita-claro: #e3e9f6; --fita-tinta: #ffffff;
+    --seguranca: #f2b705; --ok: #2c8a56; --aviso: #a86400; --aviso-claro: #fbf0dc;
+    --alarme: #c4221a; --alarme-escuro: #8f150f;
+    --ouro: #c99a12; --prata: #8e989e; --bronze: #a8642f;
+    --display: "Bahnschrift", "DIN Alternate", "DIN Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+    --texto: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+    --raio: 10px;
+    font-size: 15px;
+  }
+  /* Modo TV: escuro para não ofuscar no galpão, tudo maior */
+  html.tv {
+    --concreto: #192022; --papel: #222b2e; --tinta: #eef2ef; --sutil: #a4afab; --apagado: #66716d;
+    --linha: #344045; --fita: #7fa0ee; --fita-claro: #2a3858; --fita-tinta: #0f1730;
+    --aviso: #f0a830; --aviso-claro: #3a3020; --ok: #4cc283;
+    font-size: clamp(16px, 1.05vw, 26px);
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body { margin: 0; background: var(--fundo); color: var(--tinta); font: 15px/1.4 var(--texto); }
-  main { max-width: 1200px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
-  h1, h2 { font-family: var(--display); font-weight: 600; margin: 0; }
-  h1 { font-size: 22px; }
-  h2 { font-size: 17px; margin-bottom: 10px; }
+  html, body { overflow-x: hidden; }
+  body { margin: 0; background: var(--concreto); color: var(--tinta); font: 1rem/1.4 var(--texto); }
+  h1, h2, h3 { font-family: var(--display); font-weight: 600; margin: 0; letter-spacing: .005em; }
+  h2 { font-size: 1.3rem; }
+  h3 { font-size: 1.05rem; }
   .sutil { color: var(--sutil); }
-  .cartao { background: var(--cartao); border: 1px solid var(--linha); border-radius: 12px; padding: 16px; min-width: 0; }
+  .num { font-family: var(--display); font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 3px solid var(--seguranca); outline-offset: 2px; border-radius: 4px; }
+  button { font: inherit; color: inherit; }
 
-  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
-  .marca { color: var(--azul); }
-  .estado { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sutil); }
-  .ponto { width: 9px; height: 9px; border-radius: 50%; background: var(--apagado); flex: none; }
-  .ponto.on { background: var(--ok); } .ponto.aviso { background: var(--aviso); } .ponto.erro { background: var(--erro); }
+  /* ---------- cabeçalho: faixa azul com trama de ráfia ---------- */
+  .topo {
+    background-color: var(--fita); color: #fff;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 3px, transparent 3px 6px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.07) 0 3px, transparent 3px 6px);
+    border-bottom: 6px solid var(--seguranca);
+  }
+  html.tv .topo { background-color: #1d3270; }
+  .topo-in { max-width: 1680px; margin: 0 auto; padding: .8rem 1rem; display: flex; flex-wrap: wrap;
+             align-items: center; gap: .6rem 1.2rem; }
+  .marca { display: flex; align-items: center; gap: .7rem; margin-right: auto; min-width: 0; }
+  .marca svg { width: 2.2rem; height: 2.2rem; flex: none; }
+  .marca h1 { font-size: 1.45rem; line-height: 1.1; }
+  .marca h1 span { display: block; font: 400 .85rem/1.3 var(--texto); opacity: .85; }
+  .controles { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+  .estado { display: inline-flex; align-items: center; gap: .45rem; font-size: .87rem; opacity: .95; }
+  .btn-topo { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .75rem; border-radius: 99px;
+              border: 1.5px solid rgba(255,255,255,.55); background: transparent; color: #fff; cursor: pointer;
+              font-size: .87rem; font-weight: 600; min-height: 2.25rem; }
+  .btn-topo:hover { background: rgba(255,255,255,.12); }
+  .btn-topo[aria-pressed="true"] { background: #fff; color: #1d3270; border-color: #fff; }
+  .btn-topo svg { width: 1.05rem; height: 1.05rem; }
+  .btn-topo.pedindo { border-color: var(--seguranca); color: var(--seguranca); }
 
-  /* linha de produção: etapas com a fila entre elas */
-  .linha { display: flex; align-items: stretch; gap: 0; }
-  .etapa { flex: 1 1 0; background: var(--cartao); border: 1px solid var(--linha); border-radius: 12px; padding: 14px 16px; min-width: 0; }
-  .etapa .n { font: 600 48px/1 var(--display); margin: 6px 0 2px; }
+  .ponto { width: .6rem; height: .6rem; border-radius: 50%; background: var(--apagado); flex: none; display: inline-block; }
+  .ponto.on { background: var(--ok); } .ponto.aviso { background: var(--aviso); } .ponto.erro { background: var(--alarme); }
+  .topo .ponto.on { background: #6fe0a0; box-shadow: 0 0 0 3px rgba(111,224,160,.25); }
+
+  main { max-width: 1680px; margin: 0 auto; padding: 1rem; display: grid; gap: 1.1rem; }
+  .bloco { background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 1rem 1.1rem; min-width: 0; }
+  .bloco > h2 { margin-bottom: .75rem; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  .bloco > h2 small { font: 400 .85rem var(--texto); color: var(--sutil); }
+  .vazio { color: var(--sutil); padding: .4rem 0; margin: 0; }
+
+  /* ---------- chamados abertos: faixa de alarme ---------- */
+  .alarme { position: sticky; top: 0; z-index: 20; color: #fff; background: var(--alarme);
+            background-image: repeating-linear-gradient(-45deg, rgba(0,0,0,.14) 0 14px, transparent 14px 28px);
+            background-size: 40px 40px; animation: listras 1.2s linear infinite;
+            box-shadow: 0 6px 24px rgba(140, 20, 15, .35); }
+  @keyframes listras { to { background-position: 40px 0; } }
+  .alarme-in { max-width: 1680px; margin: 0 auto; padding: .7rem 1rem; display: grid; gap: .5rem; }
+  .chamado { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: .4rem 1rem;
+             background: var(--alarme-escuro); border-radius: var(--raio); padding: .6rem .7rem .6rem .9rem;
+             animation: pulso 1.6s ease-in-out infinite; }
+  @keyframes pulso { 50% { box-shadow: 0 0 0 4px rgba(255,255,255,.45); } }
+  .chamado .sino { width: 2.4rem; height: 2.4rem; border-radius: 50%; background: #fff; color: var(--alarme);
+                   display: grid; place-items: center; }
+  .chamado .sino svg { width: 1.4rem; height: 1.4rem; }
+  .chamado .quem { min-width: 0; }
+  .chamado .quem strong { font: 600 1.35rem/1.15 var(--display); display: block; }
+  .chamado .quem span { font-size: .95rem; opacity: .92; }
+  .chamado .espera { text-align: right; line-height: 1.1; }
+  .chamado .espera b { font: 600 1.9rem/1 var(--display); font-variant-numeric: tabular-nums; display: block; }
+  .chamado .espera small { font-size: .8rem; opacity: .9; }
+  .btn-atender { background: #fff; color: var(--alarme-escuro); border: 0; border-radius: 8px; cursor: pointer;
+                 font: 700 1.05rem var(--display); padding: .75rem 1.3rem; min-height: 2.9rem; }
+  .btn-atender:hover { background: #ffecea; }
+  .btn-atender:disabled { opacity: .7; cursor: wait; }
+  .alarme-erro { font-size: .9rem; background: #fff; color: var(--alarme-escuro); border-radius: 6px; padding: .3rem .6rem; justify-self: start; }
+
+  /* ---------- números do dia ---------- */
+  .numeros { display: grid; grid-template-columns: minmax(12rem, 1.3fr) repeat(6, minmax(0, 1fr)); gap: 0;
+             background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio); overflow: hidden; }
+  .kpi { padding: .85rem 1rem; border-left: 1px solid var(--linha); min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: .3rem; }
+  .kpi:first-child { border-left: 0; }
+  .kpi .rot { font-size: .87rem; color: var(--sutil); }
+  .kpi .val { font: 600 2.1rem/1 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .kpi .val small { font: 500 .95rem var(--texto); color: var(--sutil); margin-left: .2rem; }
+  .kpi.destaque { background: var(--fita); color: var(--fita-tinta); }
+  .kpi.destaque .rot, .kpi.destaque .val small { color: inherit; opacity: .85; }
+  .kpi.destaque .val { font-size: 3.6rem; }
+  .kpi .val.zero { color: var(--apagado); }
+  .kpi.alarme-on { background: var(--alarme); color: #fff; }
+  .kpi.alarme-on .rot, .kpi.alarme-on .val small { color: inherit; }
+
+  /* ---------- linha de costura: etapas ligadas pela costura (fila) ---------- */
+  .linha { display: flex; align-items: stretch; }
+  .etapa { flex: 1 1 0; background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio);
+           padding: .9rem 1rem; min-width: 0; position: relative; }
+  .etapa::before { content: ""; position: absolute; left: .7rem; right: .7rem; top: .45rem; border-top: 2px dashed var(--fita); opacity: .35; }
+  .etapa .nome { display: flex; align-items: center; gap: .5rem; font: 600 1.05rem var(--display); margin-top: .25rem; }
+  .etapa .ordem { width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--fita); color: var(--fita-tinta);
+                  display: grid; place-items: center; font: 600 .9rem var(--display); flex: none; }
+  .etapa .n { font: 600 3rem/1 var(--display); margin: .45rem 0 .2rem; font-variant-numeric: tabular-nums; }
   .etapa .n.zero { color: var(--apagado); }
-  .entre { flex: 0 0 auto; display: grid; place-items: center; padding: 0 8px; }
-  .chip { font-size: 13px; border-radius: 99px; padding: 4px 10px; background: var(--fundo); color: var(--sutil); white-space: nowrap; border: 1px dashed var(--apagado); }
-  .chip.tem { background: var(--azul-claro); color: var(--azul); border-color: var(--azul); }
-  .chip b { font-family: var(--display); font-size: 15px; margin-right: 3px; }
+  .etapa .det { font-size: .9rem; color: var(--sutil); display: flex; flex-wrap: wrap; gap: .2rem .9rem; }
+  .etapa .det .oc { color: var(--aviso); }
+  .costura { flex: 0 0 8.5rem; display: grid; place-items: center; position: relative; padding: 0 .3rem; }
+  .costura::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 3px dashed var(--apagado); }
+  .costura.tem::before { border-color: var(--fita); }
+  .fila { position: relative; background: var(--concreto); border: 1.5px dashed var(--apagado); color: var(--sutil);
+          border-radius: 99px; padding: .3rem .75rem; font-size: .85rem; text-align: center; line-height: 1.15; white-space: nowrap; }
+  .fila b { font: 600 1.25rem var(--display); display: block; }
+  .costura.tem .fila { background: var(--fita-claro); border: 1.5px solid var(--fita); color: var(--fita); }
+  html.tv .costura.tem .fila { color: var(--tinta); }
 
-  .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
-  .postos { display: grid; gap: 10px; }
-  .posto { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--linha); }
-  .posto:first-child { border-top: 0; padding-top: 0; }
-  .posto .titulo { font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .posto .conta { grid-row: span 3; text-align: right; font: 600 32px/1 var(--display); color: var(--azul); }
-  .posto .conta small { display: block; font: 12px var(--texto); color: var(--sutil); margin-top: 4px; }
-  .posto .conta.zero { color: var(--apagado); }
+  /* ---------- ranking por etapa ---------- */
+  .ranking { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; }
+  .rk-etapa { min-width: 0; }
+  .rk-etapa h3 { display: flex; align-items: center; gap: .5rem; padding-bottom: .5rem; border-bottom: 2px solid var(--tinta); margin-bottom: .2rem; }
+  .rk-etapa h3 .sutil { font: 400 .85rem var(--texto); margin-left: auto; }
+  .podio { list-style: none; margin: 0; padding: 0; }
+  .podio li { display: grid; grid-template-columns: 2.4rem 1fr auto; gap: .1rem .7rem; align-items: center;
+              padding: .55rem 0; border-bottom: 1px solid var(--linha); }
+  .medalha { width: 2.2rem; height: 2.2rem; border-radius: 50%; display: grid; place-items: center; grid-row: span 2;
+             font: 700 1rem var(--display); background: var(--concreto); color: var(--sutil); border: 2px solid var(--linha); }
+  .m1 { background: var(--ouro); border-color: #e7c55a; color: #fff; }
+  .m2 { background: var(--prata); border-color: #c4ccd0; color: #fff; }
+  .m3 { background: var(--bronze); border-color: #d0935f; color: #fff; }
+  .podio .tit { font-weight: 600; display: flex; align-items: center; gap: .45rem; min-width: 0; }
+  .podio .op { font-size: .9rem; color: var(--sutil); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .podio .bags { grid-row: span 2; text-align: right; }
+  .podio .bags b { font: 600 1.9rem/1 var(--display); font-variant-numeric: tabular-nums; display: block; }
+  .podio .bags small { font-size: .8rem; color: var(--sutil); }
+  .podio .metr { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: .1rem 1rem; font-size: .85rem; color: var(--sutil); }
+  .podio .metr .oc { color: var(--aviso); }
+  .resto { list-style: none; margin: .3rem 0 0; padding: 0; max-height: 22rem; overflow-y: auto; }
+  .resto li { display: grid; grid-template-columns: 1.8rem 1fr 4.5rem 2.6rem; align-items: center; gap: .5rem;
+              padding: .3rem 0; border-bottom: 1px dotted var(--linha); font-size: .9rem; }
+  .resto .pos { font: 600 .9rem var(--display); color: var(--sutil); text-align: right; }
+  .resto .nm { display: flex; align-items: center; gap: .4rem; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .resto .tm { text-align: right; color: var(--sutil); font-variant-numeric: tabular-nums; }
+  .resto .bg { text-align: right; font: 600 1.05rem var(--display); font-variant-numeric: tabular-nums; }
+  .barrinha { height: 4px; background: var(--linha); border-radius: 2px; grid-column: 2 / 5; margin-top: -.15rem; }
+  .barrinha i { display: block; height: 100%; background: var(--fita); border-radius: 2px; }
 
-  ul.leituras { list-style: none; margin: 0; padding: 0; max-height: 520px; overflow: auto; }
-  .leituras li { display: grid; grid-template-columns: 44px 12px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--linha); }
+  /* ---------- duas colunas ---------- */
+  .dupla { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: 1.1rem; align-items: start; }
+
+  /* mapa dos postos */
+  .mapa { display: grid; gap: .9rem; }
+  .mapa-etapa > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11.5rem), 1fr)); gap: .5rem; margin-top: .35rem; }
+  .mapa-etapa h3 { font-size: .95rem; color: var(--sutil); font-weight: 500; }
+  .posto { border: 1px solid var(--linha); border-left: 5px solid var(--apagado); border-radius: 8px; padding: .5rem .65rem;
+           display: grid; grid-template-columns: 1fr auto; gap: 0 .5rem; min-width: 0; background: var(--papel); }
+  .posto.online { border-left-color: var(--ok); }
+  .posto.chamando { border-color: var(--alarme); border-left-color: var(--alarme); background: #fff1f0; }
+  html.tv .posto.chamando { background: #3d1a18; }
+  .posto .tit { font-weight: 600; display: flex; align-items: center; gap: .4rem; }
+  .posto .l3.ch { color: var(--alarme); font-weight: 700; }
+  html.tv .posto .l3.ch { color: #ff8a80; }
+  .posto .cont { grid-row: span 3; text-align: right; font: 600 1.7rem/1 var(--display); color: var(--fita); align-self: center; font-variant-numeric: tabular-nums; }
+  .posto .cont small { display: block; font: .72rem var(--texto); color: var(--sutil); margin-top: .15rem; }
+  .posto .cont.zero { color: var(--apagado); }
+  .posto .l2 { font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .posto .l3 { font-size: .8rem; color: var(--sutil); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+  /* últimas leituras */
+  ul.leituras { list-style: none; margin: 0; padding: 0; max-height: 30rem; overflow: auto; }
+  #pessoas { max-height: 36rem; overflow-y: auto; }
+  .leituras li { display: grid; grid-template-columns: 2.9rem .7rem 1fr; gap: .5rem; padding: .45rem .2rem; border-top: 1px solid var(--linha); }
   .leituras li:first-child { border-top: 0; }
   .leituras li.vazio { display: block; }
   .leituras li.novo { animation: novo 1.5s ease-out; }
-  @keyframes novo { from { background: #fff4c2; } to { background: transparent; } }
+  @keyframes novo { from { background: #fff3bf; } to { background: transparent; } }
   .leituras .hora { color: var(--sutil); font-variant-numeric: tabular-nums; }
-  .leituras .ponto { margin-top: 6px; }
+  .leituras .ponto { margin-top: .4rem; }
   .leituras .cod { font-weight: 600; }
+  .leituras .res { color: var(--sutil); margin-left: .4rem; }
+  .leituras .res.erro { color: var(--alarme); font-weight: 600; }
+  .leituras .res.aviso { color: var(--aviso); }
+  .leituras .det { font-size: .87rem; color: var(--sutil); }
 
+  /* tabelas */
+  .rolagem { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 7px 6px; border-top: 1px solid var(--linha); font-variant-numeric: tabular-nums; }
-  th { font-weight: 500; color: var(--sutil); font-size: 13px; border-top: 0; }
+  th, td { text-align: left; padding: .45rem .4rem; border-top: 1px solid var(--linha); font-variant-numeric: tabular-nums; vertical-align: middle; }
+  th { font-weight: 500; color: var(--sutil); font-size: .82rem; border-top: 0; }
   td.n, th.n { text-align: right; }
-  td.forte { font: 600 18px var(--display); }
+  td.forte { font: 600 1.25rem var(--display); }
+  td .pos { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 50%; font: 600 .85rem var(--display);
+            background: var(--concreto); color: var(--sutil); }
+  td .pos.m1 { background: var(--ouro); color: #fff; } td .pos.m2 { background: var(--prata); color: #fff; } td .pos.m3 { background: var(--bronze); color: #fff; }
+  td.oc { color: var(--aviso); }
+  td.rep { color: var(--alarme); font-weight: 600; }
+  td .sub { display: block; font-size: .8rem; color: var(--sutil); }
 
-  .barras { display: flex; align-items: flex-end; gap: 6px; height: 140px; padding-top: 8px; }
+  /* gráfico de bags por hora */
+  .barras { display: flex; align-items: flex-end; gap: .35rem; height: 11rem; padding-top: .5rem; border-bottom: 2px solid var(--tinta); }
   .barra { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; }
-  .barra i { display: block; width: 100%; max-width: 40px; background: var(--azul); border-radius: 6px 6px 0 0; min-height: 2px; }
-  .barra span { font-size: 12px; color: var(--sutil); margin-top: 4px; }
-  .barra b { font: 600 13px var(--display); margin-bottom: 3px; }
+  .barra i { display: block; width: 100%; max-width: 3rem; background: var(--fita); border-radius: 4px 4px 0 0; min-height: 2px; }
+  .barra.agora i { background: var(--seguranca); }
+  .barra b { font: 600 .95rem var(--display); margin-bottom: .15rem; }
+  .barra b.zero { color: var(--apagado); }
+  .eixo { display: flex; gap: .35rem; }
+  .eixo span { flex: 1 1 0; text-align: center; font-size: .78rem; color: var(--sutil); min-width: 0; }
 
-  .vazio { color: var(--sutil); padding: 6px 0; }
-  .entrar { max-width: 360px; margin: 12vh auto; display: grid; gap: 12px; }
-  .entrar input { font: inherit; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 8px; }
-  .entrar button { font: 600 15px var(--texto); padding: 10px; border: 0; border-radius: 8px; background: var(--azul); color: #fff; cursor: pointer; }
-  .erro-msg { color: var(--erro); min-height: 1.4em; }
-  :focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+  /* histórico de chamados */
+  .st { display: inline-block; font-size: .8rem; font-weight: 600; padding: .1rem .5rem; border-radius: 99px; }
+  .st.atendido { background: var(--fita-claro); color: var(--fita); }
+  html.tv .st.atendido { color: var(--tinta); }
+  .st.cancelado { background: var(--concreto); color: var(--sutil); }
+  .st.aberto { background: var(--alarme); color: #fff; }
 
-  footer { display: flex; justify-content: flex-end; padding-bottom: 8px; }
-  .botao-perigo { font: 500 14px var(--texto); padding: 8px 14px; border-radius: 8px; cursor: pointer;
-                  background: transparent; color: var(--erro); border: 1px solid #e8b4b4; }
-  .botao-perigo:hover { background: #fbe9e9; }
-  dialog { border: 0; border-radius: 12px; padding: 20px; max-width: 380px; width: calc(100% - 32px);
-           box-shadow: 0 10px 40px rgba(24, 32, 43, .25); color: var(--tinta); }
-  dialog::backdrop { background: rgba(24, 32, 43, .45); }
-  dialog h2 { margin-bottom: 8px; }
-  dialog form { display: grid; gap: 10px; }
-  dialog input { font: inherit; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 8px; }
-  .acoes { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
-  .acoes button { font: 600 14px var(--texto); padding: 9px 14px; border-radius: 8px; cursor: pointer; border: 1px solid var(--linha); background: #fff; }
-  .acoes .confirmar { background: var(--erro); border-color: var(--erro); color: #fff; }
+  /* login */
+  .entrar { max-width: 23rem; margin: 12vh auto; display: grid; gap: .8rem; padding: 1.5rem; }
+  .entrar h1 { font-size: 1.5rem; color: var(--fita); }
+  .entrar input, dialog input { font: inherit; padding: .65rem .8rem; border: 1px solid var(--apagado); border-radius: 8px; background: var(--papel); color: var(--tinta); }
+  .entrar button { font: 600 1rem var(--texto); padding: .7rem; border: 0; border-radius: 8px; background: var(--fita); color: #fff; cursor: pointer; }
+  .erro-msg { color: var(--alarme); min-height: 1.4em; }
+
+  footer { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: flex-end; align-items: center; padding-bottom: .5rem; }
+  .botao-perigo { font: 500 .93rem var(--texto); padding: .5rem .9rem; border-radius: 8px; cursor: pointer;
+                  background: transparent; color: var(--sutil); border: 1px solid var(--apagado); }
+  .botao-perigo:hover { color: var(--alarme); border-color: var(--alarme); }
+  dialog { border: 0; border-radius: 12px; padding: 1.3rem; max-width: 25rem; width: calc(100% - 2rem);
+           box-shadow: 0 10px 40px rgba(24, 32, 43, .25); color: var(--tinta); background: var(--papel); }
+  dialog::backdrop { background: rgba(24, 32, 43, .5); }
+  dialog h2 { margin-bottom: .5rem; }
+  dialog form { display: grid; gap: .65rem; }
+  .acoes { display: flex; gap: .5rem; justify-content: flex-end; margin-top: .25rem; }
+  .acoes button { font: 600 .93rem var(--texto); padding: .6rem .9rem; border-radius: 8px; cursor: pointer; border: 1px solid var(--linha); background: var(--papel); }
+  .acoes .confirmar { background: var(--alarme); border-color: var(--alarme); color: #fff; }
   .acoes .confirmar:disabled { opacity: .6; cursor: wait; }
-  .aviso-zerado { color: var(--ok); font-size: 14px; margin-right: auto; align-self: center; }
+  .aviso-zerado { color: var(--ok); font-size: .93rem; margin-right: auto; }
 
-  @media (max-width: 700px) {
-    main { padding: 12px; gap: 12px; }
-    .linha { flex-direction: column; }
-    .entre { padding: 6px 0; }
-    .etapa .n { font-size: 40px; }
+  /* TV: esconde o que é de consulta, mantém o que se lê de longe */
+  html.tv .so-mesa { display: none !important; }
+  html.tv main, html.tv .topo-in, html.tv .alarme-in { max-width: none; padding-left: 1.4rem; padding-right: 1.4rem; }
+
+  @media (max-width: 1100px) {
+    .numeros { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kpi { border-top: 1px solid var(--linha); }
+    .kpi.destaque { grid-column: 1 / -1; border-top: 0; flex-direction: row; align-items: baseline; }
+    .kpi:nth-child(3n+2) { border-left: 0; }
   }
-  @media (prefers-reduced-motion: reduce) { .leituras li.novo { animation: none; } }
+  @media (max-width: 760px) {
+    :root { font-size: 14.5px; }
+    main { padding: .75rem; gap: .8rem; }
+    .topo-in { padding: .65rem .75rem; }
+    .alarme-in { padding: .6rem .75rem; }
+    .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi:nth-child(3n+2) { border-left: 1px solid var(--linha); }
+    .kpi:nth-child(2n) { border-left: 0; }
+    .kpi .val { font-size: 1.75rem; }
+    .kpi.destaque .val { font-size: 2.8rem; }
+    .linha { flex-direction: column; }
+    .costura { flex-basis: auto; padding: .45rem 0; }
+    .costura::before { left: 50%; right: auto; top: 0; bottom: 0; border-top: 0; border-left: 3px dashed var(--apagado); }
+    .costura.tem::before { border-color: var(--fita); }
+    .fila b { display: inline; margin-right: .25rem; }
+    .chamado { grid-template-columns: auto 1fr; }
+    .chamado .espera { grid-column: 1 / 2; grid-row: 2; text-align: left; }
+    .chamado .sino { grid-row: 1; }
+    .chamado .btn-atender { grid-column: 2; grid-row: 2; justify-self: end; }
+    .chamado .espera b { font-size: 1.6rem; }
+    .bloco { padding: .85rem; }
+    .esconde-cel, #btn-tv { display: none; }
+    .bloco > h2 small, #t-linha small { display: block; width: 100%; line-height: 1.3; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .alarme, .chamado, .leituras li.novo, .btn-topo.pedindo { animation: none !important; }
+  }
 </style>
 </head>
 <body>
-<div id="tela-senha" class="cartao entrar" hidden>
-  <h1><span class="marca">Zaraplast</span> · Painel</h1>
+<div id="tela-senha" class="bloco entrar" hidden>
+  <h1>Zaraplast</h1>
+  <p class="sutil" style="margin:0">Painel da produção de big bags.</p>
   <label for="senha" class="sutil">Senha do painel</label>
   <input id="senha" type="password" autocomplete="current-password">
   <button id="entrar" type="button">Entrar</button>
   <div id="erro-senha" class="erro-msg" role="alert"></div>
 </div>
 
-<main id="painel" hidden>
-  <header>
-    <h1><span class="marca">Zaraplast</span> · Painel da produção</h1>
-    <span class="estado" role="status"><span id="ponto-geral" class="ponto"></span><span id="atualizado">conectando…</span></span>
+<div id="app" hidden>
+  <header class="topo">
+    <div class="topo-in">
+      <div class="marca">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="9" width="22" height="20" rx="3" fill="#fff"/><path d="M5 15h22M5 22h22" stroke="#23408e" stroke-width="1.2" stroke-dasharray="2 1.6"/><path d="M10 9V3.5h4V9M18 9V3.5h4V9" stroke="#f2b705" stroke-width="2.6" fill="none"/></svg>
+        <h1>Zaraplast<span id="subtitulo">Painel da produção</span></h1>
+      </div>
+      <div class="controles">
+        <span class="estado" role="status"><span id="ponto-geral" class="ponto"></span><span id="atualizado">conectando…</span></span>
+        <button id="btn-som" class="btn-topo" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="ico-onda" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+          <span id="txt-som">Ativar som</span>
+        </button>
+        <button id="btn-tv" class="btn-topo" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="1.5"/><path d="M8 21h8"/></svg>
+          <span>Modo TV</span>
+        </button>
+      </div>
+    </div>
   </header>
 
-  <section aria-label="Linha de costura" id="linha" class="linha"></section>
+  <section id="alarme" class="alarme" aria-labelledby="t-alarme" hidden>
+    <h2 id="t-alarme" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Chamados de supervisor abertos</h2>
+    <div id="alarme-lista" class="alarme-in" role="alert"></div>
+  </section>
 
-  <div class="grade">
-    <section class="cartao" aria-labelledby="t-postos">
-      <h2 id="t-postos">Postos</h2>
-      <div id="postos" class="postos"></div>
-    </section>
-    <section class="cartao" aria-labelledby="t-leituras">
-      <h2 id="t-leituras">Últimas leituras</h2>
-      <ul id="leituras" class="leituras"></ul>
-    </section>
-  </div>
+  <main id="painel">
+    <section class="numeros" id="numeros" aria-label="Números de hoje"></section>
 
-  <div class="grade">
-    <section class="cartao" aria-labelledby="t-pessoas">
-      <h2 id="t-pessoas">Produção por pessoa hoje</h2>
-      <div id="pessoas"></div>
+    <section aria-labelledby="t-linha">
+      <h2 id="t-linha" style="margin-bottom:.6rem">Linha de costura <small class="sutil" style="font:400 .85rem var(--texto)">bags que passaram em cada etapa hoje e quantos esperam entre uma e outra</small></h2>
+      <div id="linha" class="linha"></div>
     </section>
-    <section class="cartao" aria-labelledby="t-hora">
-      <h2 id="t-hora">Bags por hora hoje</h2>
-      <div id="por-hora"></div>
-    </section>
-  </div>
 
-  <footer>
-    <span id="aviso-zerado" class="aviso-zerado" role="status"></span>
-    <button id="abrir-zerar" class="botao-perigo" type="button">Zerar demonstração</button>
-  </footer>
-</main>
+    <section class="bloco" aria-labelledby="t-ranking">
+      <h2 id="t-ranking">Ranking dos postos <small>por etapa, bags de hoje</small></h2>
+      <div id="ranking" class="ranking"></div>
+    </section>
+
+    <div class="dupla">
+      <section class="bloco" aria-labelledby="t-pessoas">
+        <h2 id="t-pessoas">Produção por pessoa <small>hoje</small></h2>
+        <div id="pessoas" class="rolagem"></div>
+      </section>
+      <section class="bloco" aria-labelledby="t-hora">
+        <h2 id="t-hora">Bags por hora <small>hoje</small></h2>
+        <div id="por-hora"></div>
+      </section>
+    </div>
+
+    <section class="bloco" aria-labelledby="t-postos">
+      <h2 id="t-postos">Postos agora <small>verde: ligado, cinza: desligado</small></h2>
+      <div id="postos" class="mapa"></div>
+    </section>
+
+    <div class="dupla so-mesa">
+      <section class="bloco" aria-labelledby="t-leituras">
+        <h2 id="t-leituras">Últimas leituras</h2>
+        <ul id="leituras" class="leituras"></ul>
+      </section>
+      <section class="bloco" aria-labelledby="t-chamados">
+        <h2 id="t-chamados">Chamados de supervisor <small id="resumo-chamados">hoje</small></h2>
+        <div id="chamados" class="rolagem"></div>
+      </section>
+    </div>
+
+    <footer class="so-mesa">
+      <span id="aviso-zerado" class="aviso-zerado" role="status"></span>
+      <button id="abrir-zerar" class="botao-perigo" type="button">Zerar demonstração</button>
+    </footer>
+  </main>
+</div>
 
 <dialog id="dialogo-zerar" aria-labelledby="t-zerar">
   <form id="form-zerar" method="dialog">
     <h2 id="t-zerar">Zerar demonstração</h2>
-    <p class="sutil" style="margin:0">Apaga todas as leituras, bags registrados e turnos. Postos, crachás e senhas continuam. Não dá para desfazer.</p>
+    <p class="sutil" style="margin:0">Apaga todas as leituras, bags registrados, turnos e chamados. Postos, crachás e senhas continuam. Não dá para desfazer.</p>
     <label for="senha-admin" class="sutil">Senha de administrador</label>
     <input id="senha-admin" type="password" autocomplete="off" required>
     <div id="erro-zerar" class="erro-msg" role="alert"></div>
@@ -164,16 +395,20 @@
 <script>
 (() => {
   'use strict';
-  const API = 'https://bdkcvudqavhlxdvmjzgn.supabase.co/functions/v1/api/painel';
+  const BASE = 'https://bdkcvudqavhlxdvmjzgn.supabase.co/functions/v1/api';
+  const API = `${BASE}/painel`;
   const CHAVE = 'zaraplast-painel-senha';
+  const CHAVE_SOM = 'zaraplast-painel-som';
+  const CHAVE_TV = 'zaraplast-painel-tv';
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
-  const ler = () => { try { return localStorage.getItem(CHAVE) || ''; } catch { return ''; } };
-  const gravar = (v) => { try { v ? localStorage.setItem(CHAVE, v) : localStorage.removeItem(CHAVE); } catch {} };
+  const lerLS = (k) => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
+  const gravarLS = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch {} };
 
   const ROTULO = { ok: 'registrado', cracha_entrada: 'entrada', cracha_saida: 'saída', pulou_etapa: 'pulou etapa',
                    repetido: 'repetido', sem_operador: 'sem operador', desconhecido: 'desconhecido' };
-  const NIVEL = { ok: 'on', cracha_entrada: 'on', cracha_saida: 'on', pulou_etapa: 'aviso' };
+  // vermelho só para o que é alarme de verdade (repetido); o resto é aviso
+  const NIVEL = { ok: 'on', cracha_entrada: 'on', cracha_saida: 'on', repetido: 'erro' };
   // o servidor manda mensagens sem acento (cabem em qualquer display de posto)
   const ACENTOS = [[/\bJa\b/g, 'Já'], [/\besta\b/g, 'está'], [/\bas (\d)/g, 'às $1'], [/\bCracha\b/g, 'Crachá'],
     [/\bcracha\b/g, 'crachá'], [/\bnao\b/g, 'não'], [/\bAte\b/g, 'Até'], [/\bOla\b/g, 'Olá'],
@@ -181,11 +416,29 @@
   const acentuar = (t) => ACENTOS.reduce((s, [re, n]) => s.replace(re, n), String(t ?? ''));
   const hora = (iso) => (iso || '').slice(11, 16);
   const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+  const dois = (n) => String(n).padStart(2, '0');
+  // tempo por bag: "38 s", "1:34", "1 h 05"
+  const tempo = (s) => {
+    if (s == null || !isFinite(s)) return '—';
+    s = Math.max(0, Math.round(s));
+    if (s < 60) return `${s} s`;
+    if (s < 3600) return `${Math.floor(s / 60)}:${dois(s % 60)}`;
+    return `${Math.floor(s / 3600)} h ${dois(Math.floor(s / 60) % 60)}`;
+  };
+  const unidadeTempo = (s) => (s == null ? '' : s < 60 ? 'por bag' : s < 3600 ? 'min por bag' : 'por bag');
+  // cronômetro de espera: "0:42", "12:05", "1:02:10"
+  const cronometro = (s) => {
+    s = Math.max(0, Math.floor(s));
+    const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60;
+    return h ? `${h}:${dois(m)}:${dois(s % 60)}` : `${m}:${dois(s % 60)}`;
+  };
+  const SVG_SINO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
 
-  let senha = ler(), timer = null, ultimaChave = null;
+  let senha = lerLS(CHAVE), timer = null, ultimaChave = null, recebidoEm = 0;
+  let chavesAlarme = '', vistos = null;
 
   function mostrarSenha(msg) {
-    $('painel').hidden = true;
+    $('app').hidden = true;
     $('tela-senha').hidden = false;
     $('erro-senha').textContent = msg || '';
     $('senha').focus();
@@ -195,129 +448,400 @@
     clearTimeout(timer);
     try {
       const r = await fetch(API, { headers: { 'X-Painel-Senha': senha }, cache: 'no-store' });
-      if (r.status === 401) { gravar(''); senha = ''; mostrarSenha('Senha incorreta.'); return; }
+      if (r.status === 401) { gravarLS(CHAVE, ''); senha = ''; mostrarSenha('Senha incorreta.'); return; }
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const d = await r.json();
+      recebidoEm = Date.now();
       $('tela-senha').hidden = true;
-      $('painel').hidden = false;
+      $('app').hidden = false;
       desenhar(d);
       $('ponto-geral').className = 'ponto on';
       $('atualizado').textContent = `atualizado às ${hora(d.gerado_em)}`;
     } catch (e) {
       $('ponto-geral').className = 'ponto erro';
-      $('atualizado').textContent = 'sem conexão com o servidor, tentando de novo…';
+      $('atualizado').textContent = 'sem conexão, tentando de novo…';
     }
     if (!document.hidden) timer = setTimeout(atualizar, 3000);
   }
 
   function desenhar(d) {
+    const chamados = d.chamados || [];
+    const abertos = chamados.filter((c) => c.aberto);
+    desenharAlarme(abertos);
+    desenharNumeros(d.resumo || {}, abertos.length);
     desenharLinha(d.etapas || [], d.fila || []);
-    desenharPostos(d.postos || []);
-    desenharLeituras(d.leituras || []);
+    desenharRanking(d.ranking || []);
     desenharPessoas(d.pessoas || []);
-    desenharHoras(d.por_hora || []);
+    desenharHoras(d.por_hora || [], d.gerado_em);
+    desenharPostos(d.postos || [], d.ranking || []);
+    desenharLeituras(d.leituras || []);
+    desenharChamados(chamados);
+    if (d.data) {
+      const [a, m, dia] = d.data.split('-');
+      $('subtitulo').textContent = `Painel da produção de ${dia}/${m}/${a}`;
+    }
   }
 
+  // ------------------------------------------------------------------ chamados abertos
+  function desenharAlarme(abertos) {
+    const sec = $('alarme');
+    // som para chamado novo (não toca para os que já estavam abertos quando o painel abriu)
+    const ids = new Set(abertos.map((c) => c.id));
+    if (vistos) { for (const id of ids) if (!vistos.has(id)) { tocar(); break; } }
+    vistos = new Set([...(vistos || []), ...ids]);
+    document.title = abertos.length ? `(${abertos.length}) Chamado · Zaraplast` : 'Zaraplast · Painel da produção';
+
+    // atualiza a base do cronômetro sem recriar os botões (não perde o foco do teclado)
+    const chave = abertos.map((c) => c.id).join(',');
+    if (chave === chavesAlarme) {
+      abertos.forEach((c) => { const b = sec.querySelector(`[data-chamado="${c.id}"] .espera b`); if (b) b.dataset.base = c.segundos ?? 0; });
+      tique();
+      return;
+    }
+    const tinhaFoco = sec.contains(document.activeElement);
+    chavesAlarme = chave;
+    sec.hidden = !abertos.length;
+    const lista = $('alarme-lista');
+    lista.replaceChildren(...abertos.map((c) => {
+      const div = el('div', 'chamado');
+      div.dataset.chamado = c.id;
+      const sino = el('div', 'sino'); sino.innerHTML = SVG_SINO;
+      const quem = el('div', 'quem');
+      quem.append(el('strong', null, `Posto ${c.posto} chama o supervisor`),
+                  el('span', null, `${c.etapa}, ${c.operador ? c.operador : 'posto sem operador'}, desde ${hora(c.aberto_em)}`));
+      const esp = el('div', 'espera');
+      const b = el('b', null, cronometro(c.segundos ?? 0));
+      b.dataset.base = c.segundos ?? 0;
+      esp.append(b, el('small', null, 'esperando'));
+      const bt = el('button', 'btn-atender', 'Atender');
+      bt.type = 'button';
+      bt.setAttribute('aria-label', `Atender chamado do posto ${c.posto}`);
+      bt.addEventListener('click', () => atender(c, bt));
+      div.append(sino, quem, esp, bt);
+      return div;
+    }));
+    if (tinhaFoco) { const b = lista.querySelector('.btn-atender'); (b || $('t-ranking')).focus?.(); }
+  }
+
+  function tique() {
+    const passou = recebidoEm ? (Date.now() - recebidoEm) / 1000 : 0;
+    document.querySelectorAll('#alarme-lista .espera b').forEach((b) => { b.textContent = cronometro(Number(b.dataset.base) + passou); });
+  }
+  setInterval(tique, 1000);
+
+  async function atender(c, bt) {
+    bt.disabled = true;
+    bt.textContent = 'Atendendo…';
+    try {
+      const r = await fetch(`${BASE}/atender`, { method: 'POST',
+        headers: { 'X-Painel-Senha': senha, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.id }) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const linha = bt.closest('.chamado');
+      const prox = linha.nextElementSibling || linha.previousElementSibling;
+      linha.remove();
+      chavesAlarme = [...$('alarme-lista').querySelectorAll('.chamado')].map((x) => x.dataset.chamado).join(',');
+      if (!chavesAlarme) $('alarme').hidden = true;
+      (prox?.querySelector('.btn-atender') || $('t-ranking')).focus?.();
+      atualizar();
+    } catch {
+      bt.disabled = false;
+      bt.textContent = 'Atender';
+      const linha = bt.closest('.chamado');
+      if (!linha.querySelector('.alarme-erro')) linha.querySelector('.quem').append(el('div', 'alarme-erro', 'Não consegui registrar. Toque de novo.'));
+    }
+  }
+
+  // ------------------------------------------------------------------ som (WebAudio, sem arquivo)
+  let audio = null;
+  const querSom = () => lerLS(CHAVE_SOM) === '1';
+  function estadoSom() {
+    const btn = $('btn-som'), ligado = querSom(), rodando = audio && audio.state === 'running';
+    btn.setAttribute('aria-pressed', String(ligado && !!rodando));
+    btn.classList.toggle('pedindo', ligado && !rodando);
+    $('ico-onda').style.display = ligado ? '' : 'none';
+    $('txt-som').textContent = !ligado ? 'Ativar som' : rodando ? 'Som ligado' : 'Toque para ligar o som';
+  }
+  function liberarAudio() {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      return audio.resume().then(estadoSom, estadoSom);
+    } catch { estadoSom(); return Promise.resolve(); }
+  }
+  function tocar() {
+    if (!querSom() || !audio || audio.state !== 'running') return;
+    const t0 = audio.currentTime + 0.02;
+    [[988, 0], [740, 0.18], [988, 0.42], [740, 0.6]].forEach(([f, dt]) => {
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0 + dt);
+      g.gain.exponentialRampToValueAtTime(0.35, t0 + dt + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.16);
+      o.connect(g).connect(audio.destination);
+      o.start(t0 + dt); o.stop(t0 + dt + 0.18);
+    });
+  }
+  $('btn-som').addEventListener('click', () => {
+    const rodando = audio && audio.state === 'running';
+    if (querSom() && rodando) { gravarLS(CHAVE_SOM, ''); estadoSom(); return; }
+    gravarLS(CHAVE_SOM, '1');
+    liberarAudio().then(tocar);
+  });
+  // o navegador só libera áudio depois de um toque: se o som já estava ligado, o primeiro toque na página o religa
+  const primeiroToque = () => { if (querSom()) liberarAudio(); };
+  document.addEventListener('pointerdown', primeiroToque, { once: true, capture: true });
+  document.addEventListener('keydown', primeiroToque, { once: true, capture: true });
+  estadoSom();
+
+  // ------------------------------------------------------------------ modo TV
+  function modoTV(ligar, tela) {
+    document.documentElement.classList.toggle('tv', ligar);
+    $('btn-tv').setAttribute('aria-pressed', String(ligar));
+    gravarLS(CHAVE_TV, ligar ? '1' : '');
+    if (tela) {
+      if (ligar && !document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+      if (!ligar && document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    }
+  }
+  $('btn-tv').addEventListener('click', () => modoTV(!document.documentElement.classList.contains('tv'), true));
+
+  // ------------------------------------------------------------------ números do dia
+  function desenharNumeros(r, nAbertos) {
+    const k = (rot, val, unid, cls) => {
+      const d = el('div', `kpi${cls ? ` ${cls}` : ''}`);
+      const v = el('div', `val${val === 0 || val === '—' ? ' zero' : ''}`, val);
+      if (unid) v.append(el('small', null, unid));
+      d.append(el('div', 'rot', rot), v);
+      return d;
+    };
+    const tm = r.tempo_medio_s;
+    const abertos = r.chamados_abertos ?? nAbertos;
+    $('numeros').replaceChildren(
+      k('Bags costurados hoje', r.bags ?? 0, null, 'destaque'),
+      k('Na última hora', r.ultima_hora ?? 0, (r.ultima_hora === 1 ? 'bag' : 'bags')),
+      k('Tempo médio', tempo(tm), unidadeTempo(tm)),
+      k('Operadores no turno', r.operadores_ativos ?? 0),
+      k('Postos ligados', r.postos_online ?? 0, `de ${r.postos ?? 0}`),
+      k('Ocorrências', r.ocorrencias ?? 0, null),
+      k('Chamados abertos', abertos, r.chamados_hoje ? `${r.chamados_hoje} hoje` : null, abertos ? 'alarme-on' : ''),
+    );
+  }
+
+  // ------------------------------------------------------------------ linha de costura
   function desenharLinha(etapas, fila) {
     const alvo = $('linha');
     alvo.replaceChildren();
+    if (!etapas.length) { alvo.append(el('p', 'vazio', 'Nenhuma etapa cadastrada.')); return; }
     etapas.forEach((e, i) => {
       if (i > 0) {
         const f = fila.find((x) => x.para === e.nome);
         const n = f ? f.bags : 0;
-        const entre = el('div', 'entre');
-        const chip = el('span', `chip${n ? ' tem' : ''}`);
+        const c = el('div', `costura${n ? ' tem' : ''}`);
+        const chip = el('span', 'fila');
         if (n) chip.append(el('b', null, n), document.createTextNode(n === 1 ? 'aguardando' : 'aguardando'));
         else chip.textContent = 'sem fila';
-        chip.title = `Bags que passaram em ${f ? f.de : ''} e ainda não em ${e.nome}`;
-        entre.append(chip);
-        alvo.append(entre);
+        chip.title = `Bags que passaram em ${f ? f.de : etapas[i - 1].nome} e ainda não em ${e.nome}`;
+        c.append(chip);
+        alvo.append(c);
       }
       const c = el('article', 'etapa');
-      c.append(el('div', 'sutil', e.nome), el('div', `n${e.bags ? '' : ' zero'}`, e.bags),
-               el('div', 'sutil', `${e.bags === 1 ? 'bag hoje' : 'bags hoje'}${e.ocorrencias ? ` · ${plural(e.ocorrencias, 'ocorrência', 'ocorrências')}` : ''}`));
+      const nome = el('div', 'nome');
+      nome.append(el('span', 'ordem', i + 1), document.createTextNode(e.nome));
+      const det = el('div', 'det');
+      det.append(el('span', null, e.bags === 1 ? 'bag hoje' : 'bags hoje'));
+      if (e.ocorrencias) det.append(el('span', 'oc', plural(e.ocorrencias, 'ocorrência', 'ocorrências')));
+      c.append(nome, el('div', `n${e.bags ? '' : ' zero'}`, e.bags), det);
       alvo.append(c);
     });
   }
 
-  function desenharPostos(postos) {
-    const alvo = $('postos');
-    if (!postos.length) { alvo.replaceChildren(el('p', 'vazio', 'Nenhum posto cadastrado.')); return; }
-    alvo.replaceChildren(...postos.map((p) => {
-      const pn = p.painel || {};
-      const div = el('div', 'posto');
-      const t = el('div', 'titulo');
-      t.append(el('span', `ponto${p.online ? ' on' : ''}`), document.createTextNode(`Posto ${p.id}`),
-               el('span', 'sutil', `· ${p.etapa}`));
-      const conta = el('div', `conta${pn.operador && pn.bags_turno ? '' : ' zero'}`, pn.operador ? pn.bags_turno : '—');
-      conta.append(el('small', null, pn.operador ? 'no turno' : ''));
-      div.append(t, conta);
-      div.append(el('div', null, pn.operador ? `${pn.operador}, desde ${hora(pn.turno_inicio)}` : 'Livre, sem operador'));
-      const ul = p.ultima_leitura;
-      const st = p.online ? 'ligado' : (p.ultimo_contato ? `desligado (visto às ${hora(p.ultimo_contato)})` : 'nunca conectou');
-      div.append(el('div', 'sutil', ul ? `${st} · última: ${ul.codigo} ${ROTULO[ul.resultado] || ul.resultado} às ${hora(ul.horario)}` : st));
-      return div;
+  // ------------------------------------------------------------------ ranking por etapa
+  function desenharRanking(ranking) {
+    const alvo = $('ranking');
+    if (!ranking.length) { alvo.replaceChildren(el('p', 'vazio', 'O ranking aparece quando houver postos cadastrados.')); return; }
+    alvo.replaceChildren(...ranking.map((r) => {
+      const col = el('div', 'rk-etapa');
+      const h = el('h3', null, r.etapa);
+      h.append(el('span', 'sutil', plural(r.postos.length, 'posto', 'postos')));
+      col.append(h);
+      const postos = r.postos || [];
+      if (!postos.length) { col.append(el('p', 'vazio', 'Sem postos nesta etapa.')); return col; }
+      const lider = Math.max(1, ...postos.map((p) => p.bags || 0));
+      const competicao = postos.filter((p) => p.bags > 0).length >= 2;
+      const podio = el('ol', 'podio');
+      postos.slice(0, 3).forEach((p, i) => {
+        const li = el('li');
+        const med = el('span', `medalha${competicao && p.bags > 0 ? ` m${i + 1}` : ''}`, `${i + 1}º`);
+        med.setAttribute('aria-label', `${i + 1}º lugar`);
+        const tit = el('div', 'tit');
+        tit.append(el('span', `ponto${p.online ? ' on' : ''}`), document.createTextNode(`Posto ${p.posto}`));
+        tit.title = p.online ? 'ligado' : 'desligado';
+        const bags = el('div', 'bags');
+        bags.append(el('b', p.bags ? '' : 'sutil', p.bags), el('small', null, p.bags === 1 ? 'bag' : 'bags'));
+        li.append(med, tit, bags, el('div', 'op', p.operador || 'sem operador'));
+        const met = el('div', 'metr');
+        met.append(el('span', null, p.tempo_medio_s == null ? 'tempo médio ainda sem dados' : `${tempo(p.tempo_medio_s)} ${unidadeTempo(p.tempo_medio_s)}`));
+        if (p.ocorrencias) met.append(el('span', 'oc', plural(p.ocorrencias, 'ocorrência', 'ocorrências')));
+        li.append(met);
+        podio.append(li);
+      });
+      col.append(podio);
+      if (postos.length > 3) {
+        const resto = el('ol', 'resto');
+        resto.start = 4;
+        postos.slice(3).forEach((p, j) => {
+          const li = el('li');
+          const nm = el('span', 'nm');
+          nm.append(el('span', `ponto${p.online ? ' on' : ''}`), document.createTextNode(`Posto ${p.posto}`),
+                    el('span', 'sutil', p.operador ? p.operador.split(' ')[0] : ''));
+          const bar = el('div', 'barrinha'); const i = el('i'); i.style.width = `${Math.round((p.bags / lider) * 100)}%`; bar.append(i);
+          li.append(el('span', 'pos', `${j + 4}º`), nm, el('span', 'tm', tempo(p.tempo_medio_s)), el('span', 'bg', p.bags), bar);
+          li.title = `${p.bags} bags, ${tempo(p.tempo_medio_s)} por bag, ${plural(p.ocorrencias || 0, 'ocorrência', 'ocorrências')}`;
+          resto.append(li);
+        });
+        col.append(resto);
+      }
+      return col;
     }));
   }
 
+  // ------------------------------------------------------------------ pessoas
+  function desenharPessoas(pessoas) {
+    const alvo = $('pessoas');
+    if (!pessoas.length) { alvo.replaceChildren(el('p', 'vazio', 'Ninguém produziu ainda hoje. A lista começa no primeiro bag lido.')); return; }
+    const t = el('table');
+    const cab = el('tr');
+    [['', ''], ['Operador', ''], ['Bags', 'n'], ['Tempo médio', 'n'], ['Repetidos', 'n esconde-cel'], ['Pulou etapa', 'n esconde-cel']]
+      .forEach(([txt, c]) => { const th = el('th', c, txt); th.scope = 'col'; cab.append(th); });
+    t.append(cab);
+    const competicao = pessoas.filter((p) => p.bags > 0).length >= 2;
+    pessoas.forEach((p, i) => {
+      const tr = el('tr');
+      const pos = el('td'); pos.append(el('span', `pos${competicao && i < 3 ? ` m${i + 1}` : ''}`, `${i + 1}º`));
+      const nome = el('td');
+      nome.append(document.createTextNode(p.nome), el('span', 'sub', p.primeiro === p.ultimo ? `às ${p.primeiro}` : `das ${p.primeiro} às ${p.ultimo}`));
+      tr.append(pos, nome, el('td', 'n forte', p.bags), el('td', 'n', tempo(p.tempo_medio_s)),
+                el('td', `n esconde-cel${p.repetidos ? ' rep' : ''}`, p.repetidos), el('td', `n esconde-cel${p.pulou ? ' oc' : ''}`, p.pulou));
+      t.append(tr);
+    });
+    alvo.replaceChildren(t);
+  }
+
+  // ------------------------------------------------------------------ bags por hora
+  function desenharHoras(horas, geradoEm) {
+    const alvo = $('por-hora');
+    if (!horas.length) { alvo.replaceChildren(el('p', 'vazio', 'O gráfico aparece quando o primeiro bag for registrado.')); return; }
+    const agora = Number((geradoEm || '').slice(11, 13));
+    const ini = Math.min(...horas.map((h) => h.hora));
+    let fim = Math.max(...horas.map((h) => h.hora));
+    if (isFinite(agora) && agora > fim && agora - ini < 24) fim = agora;
+    if (fim - ini < 5) fim = Math.min(23, ini + 5);
+    const mapa = new Map(horas.map((h) => [h.hora, h.bags]));
+    const lista = []; for (let h = ini; h <= fim; h++) lista.push({ hora: h, bags: mapa.get(h) || 0 });
+    const max = Math.max(...lista.map((h) => h.bags), 1);
+    const caixa = el('div', 'barras'), eixo = el('div', 'eixo');
+    caixa.setAttribute('role', 'img');
+    caixa.setAttribute('aria-label', lista.map((h) => `${h.hora}h: ${h.bags}`).join(', '));
+    lista.forEach((h) => {
+      const b = el('div', `barra${h.hora === agora ? ' agora' : ''}`);
+      const i = el('i');
+      i.style.height = `${Math.round((h.bags / max) * 100)}%`;
+      if (!h.bags) i.style.height = '0';
+      b.append(el('b', h.bags ? '' : 'zero', h.bags), i);
+      b.title = `${plural(h.bags, 'bag', 'bags')} das ${h.hora}h às ${h.hora + 1}h${h.hora === agora ? ' (hora atual)' : ''}`;
+      caixa.append(b);
+      eixo.append(el('span', null, `${h.hora}h`));
+    });
+    alvo.replaceChildren(caixa, eixo);
+  }
+
+  // ------------------------------------------------------------------ postos agora
+  function desenharPostos(postos, ranking) {
+    const alvo = $('postos');
+    if (!postos.length) { alvo.replaceChildren(el('p', 'vazio', 'Nenhum posto cadastrado.')); return; }
+    const ordem = ranking.map((r) => r.etapa);
+    const grupos = new Map();
+    postos.forEach((p) => { if (!grupos.has(p.etapa)) grupos.set(p.etapa, []); grupos.get(p.etapa).push(p); });
+    const etapas = [...grupos.keys()].sort((a, b) => (ordem.indexOf(a) + 1 || 99) - (ordem.indexOf(b) + 1 || 99));
+    alvo.replaceChildren(...etapas.map((nome) => {
+      const g = el('div', 'mapa-etapa');
+      g.append(el('h3', null, nome));
+      const grade = el('div');
+      grupos.get(nome).forEach((p) => {
+        const pn = p.painel || {};
+        const ch = pn.chamado;
+        const div = el('div', `posto${p.online ? ' online' : ''}${ch ? ' chamando' : ''}`);
+        const t = el('div', 'tit');
+        t.append(document.createTextNode(`Posto ${p.id}`));
+        const bagsDia = pn.bags_posto_dia ?? 0;
+        const conta = el('div', `cont${bagsDia ? '' : ' zero'}`, bagsDia);
+        conta.append(el('small', null, bagsDia === 1 ? 'bag hoje' : 'bags hoje'));
+        div.append(t, conta);
+        div.append(el('div', `l2${pn.operador ? '' : ' sutil'}`, pn.operador || 'sem operador'));
+        const st = p.online ? 'ligado' : (p.ultimo_contato ? `desligado às ${hora(p.ultimo_contato)}` : 'nunca conectou');
+        const tm = pn.operador && pn.tempo_medio_s != null ? `${tempo(pn.tempo_medio_s)} por bag` : '';
+        div.append(el('div', `l3${ch ? ' ch' : ''}`, ch ? 'chamando o supervisor' : (tm || st)));
+        const ul = p.ultima_leitura;
+        div.title = [`Posto ${p.id}, ${st}`, pn.operador ? `${pn.operador} desde ${hora(pn.turno_inicio)}` : '', tm ? `${tm} no turno` : '',
+          ul ? `última leitura: ${ul.codigo} ${ROTULO[ul.resultado] || ul.resultado} às ${hora(ul.horario)}` : ''].filter(Boolean).join('\n');
+        grade.append(div);
+      });
+      g.append(grade);
+      return g;
+    }));
+  }
+
+  // ------------------------------------------------------------------ últimas leituras
   function desenharLeituras(itens) {
     const alvo = $('leituras');
-    if (!itens.length) { alvo.replaceChildren(el('li', 'vazio', 'Nenhuma leitura ainda.')); return; }
+    if (!itens.length) { alvo.replaceChildren(el('li', 'vazio', 'Nenhuma leitura ainda. Elas aparecem aqui assim que um posto lê um crachá ou um bag.')); return; }
     const chave = (l) => `${l.horario}|${l.posto}|${l.codigo}`;
     const anterior = ultimaChave;
     let novo = anterior !== null;
     alvo.replaceChildren(...itens.map((l) => {
       if (chave(l) === anterior) novo = false;
       const li = el('li', novo ? 'novo' : '');
+      const nivel = NIVEL[l.resultado] || 'aviso';
       const corpo = el('div');
       const l1 = el('div');
-      l1.append(el('span', 'cod', l.codigo), document.createTextNode(`  ${ROTULO[l.resultado] || l.resultado}`));
-      const det = [`posto ${l.posto}`, l.operador, ['ok', 'cracha_entrada', 'cracha_saida'].includes(l.resultado) ? '' : acentuar(l.mensagem)];
-      corpo.append(l1, el('div', 'sutil', det.filter(Boolean).join(' · ')));
-      li.append(el('span', 'hora', hora(l.horario)), el('span', `ponto ${NIVEL[l.resultado] || 'erro'}`), corpo);
+      l1.append(el('span', 'cod', l.codigo), el('span', `res${nivel === 'on' ? '' : ` ${nivel}`}`, ROTULO[l.resultado] || l.resultado));
+      const det = [`Posto ${l.posto}`, l.operador, ['ok', 'cracha_entrada', 'cracha_saida'].includes(l.resultado) ? '' : acentuar(l.mensagem)];
+      corpo.append(l1, el('div', 'det', det.filter(Boolean).join(', ')));
+      li.append(el('span', 'hora', hora(l.horario)), el('span', `ponto ${nivel}`), corpo);
       return li;
     }));
     ultimaChave = chave(itens[0]);
   }
 
-  function desenharPessoas(pessoas) {
-    const alvo = $('pessoas');
-    if (!pessoas.length) { alvo.replaceChildren(el('p', 'vazio', 'Ninguém produziu ainda hoje.')); return; }
+  // ------------------------------------------------------------------ histórico de chamados
+  function desenharChamados(chamados) {
+    const alvo = $('chamados');
+    const fechados = chamados.filter((c) => !c.aberto && c.fechado_por === 'atendido');
+    const media = fechados.length ? fechados.reduce((s, c) => s + (c.segundos || 0), 0) / fechados.length : null;
+    $('resumo-chamados').textContent = chamados.length
+      ? `hoje: ${plural(chamados.length, 'chamado', 'chamados')}${media != null ? `, atendidos em ${tempo(media)} em média` : ''}`
+      : 'hoje';
+    if (!chamados.length) {
+      alvo.replaceChildren(el('p', 'vazio', 'Nenhum chamado hoje. Quando um operador tocar em “Chamar supervisor”, o aviso aparece no topo da tela.'));
+      return;
+    }
     const t = el('table');
     const cab = el('tr');
-    [['Operador', ''], ['Bags', 'n'], ['Por hora', 'n'], ['Repetidos', 'n'], ['Pulou etapa', 'n']]
-      .forEach(([txt, c]) => cab.append(el('th', c, txt)));
+    [['Hora', ''], ['Posto', ''], ['Etapa', 'esconde-cel'], ['Quem chamou', ''], ['Situação', ''], ['Esperou', 'n']]
+      .forEach(([txt, c]) => { const th = el('th', c, txt); th.scope = 'col'; cab.append(th); });
     t.append(cab);
-    pessoas.forEach((p) => {
+    chamados.forEach((c) => {
       const tr = el('tr');
-      const nome = el('td');
-      nome.append(document.createTextNode(p.nome), el('div', 'sutil', `${p.primeiro}–${p.ultimo}`));
-      tr.append(nome, el('td', 'n forte', p.bags),
-                el('td', 'n', p.bags_hora == null ? '—' : String(p.bags_hora).replace('.', ',')),
-                el('td', 'n', p.repetidos), el('td', 'n', p.pulou));
+      const sit = c.aberto ? 'aberto' : c.fechado_por === 'cancelado' ? 'cancelado' : 'atendido';
+      const tdSit = el('td'); tdSit.append(el('span', `st ${sit}`, sit === 'aberto' ? 'aberto' : sit === 'cancelado' ? 'cancelado pelo posto' : `atendido às ${hora(c.fechado_em)}`));
+      tr.append(el('td', null, hora(c.aberto_em)), el('td', null, c.posto), el('td', 'esconde-cel', c.etapa),
+                el('td', c.operador ? '' : 'sutil', c.operador || 'posto sem operador'), tdSit,
+                el('td', 'n', c.aberto ? 'esperando' : tempo(c.segundos)));
       t.append(tr);
     });
     alvo.replaceChildren(t);
   }
 
-  function desenharHoras(horas) {
-    const alvo = $('por-hora');
-    if (!horas.length) { alvo.replaceChildren(el('p', 'vazio', 'O gráfico aparece quando o primeiro bag for registrado.')); return; }
-    const max = Math.max(...horas.map((h) => h.bags), 1);
-    const caixa = el('div', 'barras');
-    horas.forEach((h) => {
-      const b = el('div', 'barra');
-      const i = el('i');
-      i.style.height = `${Math.round((h.bags / max) * 100)}%`;
-      b.append(el('b', null, h.bags), i, el('span', null, `${h.hora}h`));
-      b.title = `${plural(h.bags, 'bag', 'bags')} das ${h.hora}h às ${h.hora + 1}h`;
-      caixa.append(b);
-    });
-    alvo.replaceChildren(caixa);
-  }
-
-  // ---------------------------------------------------------------- zerar demonstração
-  const URL_ZERAR = API.replace(/\/painel$/, '/zerar');
+  // ------------------------------------------------------------------ zerar demonstração
   const dialogo = $('dialogo-zerar');
   $('abrir-zerar').addEventListener('click', () => {
     $('erro-zerar').textContent = '';
@@ -332,14 +856,16 @@
     botao.disabled = true;
     botao.textContent = 'Apagando…';
     try {
-      const r = await fetch(URL_ZERAR, { method: 'POST', headers: { 'X-Admin-Senha': $('senha-admin').value.trim() } });
+      const r = await fetch(`${BASE}/zerar`, { method: 'POST', headers: { 'X-Admin-Senha': $('senha-admin').value.trim() } });
       if (r.status === 401) { $('erro-zerar').textContent = 'Senha de administrador incorreta.'; return; }
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const d = await r.json();
       dialogo.close();
       ultimaChave = null;
-      $('aviso-zerado').textContent = `Zerado às ${hora(d.zerado_em)}: ${plural(d.leituras, 'leitura', 'leituras')}, `
-        + `${plural(d.passagens, 'passagem de bag', 'passagens de bag')} e ${plural(d.turnos, 'turno', 'turnos')} apagados.`;
+      const partes = [plural(d.leituras ?? 0, 'leitura', 'leituras'), plural(d.passagens ?? 0, 'passagem de bag', 'passagens de bag'),
+                      plural(d.turnos ?? 0, 'turno', 'turnos')];
+      if (d.chamados != null) partes.push(plural(d.chamados, 'chamado', 'chamados'));
+      $('aviso-zerado').textContent = `Zerado às ${hora(d.zerado_em)}: ${partes.slice(0, -1).join(', ')} e ${partes.at(-1)} apagados.`;
       atualizar();
     } catch {
       $('erro-zerar').textContent = 'Não consegui falar com o servidor. Tente de novo.';
@@ -349,13 +875,16 @@
     }
   });
 
-  $('entrar').addEventListener('click', () => { senha = $('senha').value.trim(); gravar(senha); atualizar(); });
+  $('entrar').addEventListener('click', () => { senha = $('senha').value.trim(); gravarLS(CHAVE, senha); atualizar(); });
   $('senha').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('entrar').click(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && senha) atualizar(); });
 
-  // senha também pode vir no link: .../#senha=xxxx (não vai para o servidor nem para o histórico de buscas)
+  // link: .../#senha=xxxx (não vai para o servidor nem para o histórico de buscas); #tv liga o modo TV
   const m = location.hash.match(/senha=([^&]+)/);
-  if (m) { senha = decodeURIComponent(m[1]); gravar(senha); history.replaceState(null, '', location.pathname); }
+  const tvNoLink = /(^#|&)tv\b/.test(location.hash);
+  if (m) { senha = decodeURIComponent(m[1]); gravarLS(CHAVE, senha); }
+  if (m || tvNoLink) history.replaceState(null, '', location.pathname + location.search);
+  modoTV(tvNoLink || lerLS(CHAVE_TV) === '1', false);
   if (senha) atualizar(); else mostrarSenha();
 })();
 </script>
