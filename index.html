@@ -256,6 +256,27 @@
   .acoes .confirmar:disabled { opacity: .6; cursor: wait; }
   .aviso-zerado { color: var(--ok); font-size: .93rem; margin-right: auto; }
 
+  /* TV de uma equipe (?equipe=manutencao): só os chamados dela, bem grandes */
+  .equipe-tv { display: none; }
+  html.equipe main, html.equipe #btn-tv { display: none !important; }
+  html.equipe .equipe-tv { display: grid; place-items: center; min-height: 70vh; padding: 2rem 1rem; text-align: center; }
+  .equipe-tv .calmo { display: grid; gap: .6rem; justify-items: center; color: var(--sutil); }
+  .equipe-tv .calmo .ponto { width: 1.4rem; height: 1.4rem; background: var(--ok); }
+  .equipe-tv .calmo strong { font: 600 2.6rem/1.1 var(--display); color: var(--tinta); }
+  .equipe-tv .calmo span { font-size: 1.2rem; }
+  html.equipe .alarme { position: static; }
+  html.equipe .alarme-in { max-width: none; padding: 1.2rem 1.4rem; gap: 1rem; }
+  html.equipe .chamado { padding: 1.1rem 1.3rem; }
+  html.equipe .chamado .sino { width: 4rem; height: 4rem; }
+  html.equipe .chamado .sino svg { width: 2.3rem; height: 2.3rem; }
+  html.equipe .chamado .quem strong { font-size: 2.6rem; }
+  html.equipe .chamado .quem span { font-size: 1.3rem; }
+  html.equipe .chamado .espera b { font-size: 3.4rem; }
+  html.equipe .alarme:not([hidden]) + main + .equipe-tv { display: none; }
+  .tvs-equipes { margin-right: auto; font-size: .9rem; color: var(--sutil); }
+  .tvs-equipes a { color: var(--fita); }
+  html.tv .tvs-equipes a { color: var(--tinta); }
+
   /* TV: esconde o que é de consulta, mantém o que se lê de longe */
   html.tv .so-mesa { display: none !important; }
   html.tv main, html.tv .topo-in, html.tv .alarme-in { max-width: none; padding-left: 1.4rem; padding-right: 1.4rem; }
@@ -327,7 +348,7 @@
   </header>
 
   <section id="alarme" class="alarme" aria-labelledby="t-alarme" hidden>
-    <h2 id="t-alarme" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Chamados de supervisor abertos</h2>
+    <h2 id="t-alarme" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Chamados abertos</h2>
     <div id="alarme-lista" class="alarme-in" role="alert"></div>
   </section>
 
@@ -366,16 +387,28 @@
         <ul id="leituras" class="leituras"></ul>
       </section>
       <section class="bloco" aria-labelledby="t-chamados">
-        <h2 id="t-chamados">Chamados de supervisor <small id="resumo-chamados">hoje</small></h2>
+        <h2 id="t-chamados">Chamados <small id="resumo-chamados">hoje</small></h2>
         <div id="chamados" class="rolagem"></div>
       </section>
     </div>
 
     <footer class="so-mesa">
       <span id="aviso-zerado" class="aviso-zerado" role="status"></span>
+      <span class="tvs-equipes">TV de cada equipe:
+        <a href="?equipe=supervisor">supervisor</a> ·
+        <a href="?equipe=manutencao">manutenção</a> ·
+        <a href="?equipe=abastecimento">abastecimento</a></span>
       <button id="abrir-zerar" class="botao-perigo" type="button">Zerar demonstração</button>
     </footer>
   </main>
+
+  <section class="equipe-tv" aria-live="polite">
+    <div class="calmo">
+      <span class="ponto"></span>
+      <strong id="equipe-vazio">Nenhum chamado agora</strong>
+      <span>Quando um posto pedir ajuda, ele aparece aqui com som.</span>
+    </div>
+  </section>
 </div>
 
 <dialog id="dialogo-zerar" aria-labelledby="t-zerar">
@@ -432,6 +465,16 @@
     const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60;
     return h ? `${h}:${dois(m)}:${dois(s % 60)}` : `${m}:${dois(s % 60)}`;
   };
+  // equipes do "Pedir ajuda" na tela do posto
+  const EQUIPES = {
+    supervisor: { nome: 'Supervisor', para: 'o supervisor', tv: 'TV do supervisor' },
+    manutencao: { nome: 'Manutenção', para: 'a manutenção', tv: 'TV da manutenção' },
+    abastecimento: { nome: 'Abastecimento', para: 'o abastecimento', tv: 'TV do abastecimento' },
+  };
+  const equipeDe = (c) => EQUIPES[c?.tipo] || EQUIPES.supervisor;
+  // ?equipe=manutencao: TV só com os chamados daquela equipe
+  const EQUIPE = new URLSearchParams(location.search).get('equipe');
+  const EQUIPE_TV = EQUIPES[EQUIPE] ? EQUIPE : null;
   const SVG_SINO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
 
   let senha = lerLS(CHAVE), timer = null, ultimaChave = null, recebidoEm = 0;
@@ -467,7 +510,7 @@
   function desenhar(d) {
     const chamados = d.chamados || [];
     const abertos = chamados.filter((c) => c.aberto);
-    desenharAlarme(abertos);
+    desenharAlarme(EQUIPE_TV ? abertos.filter((c) => (c.tipo || 'supervisor') === EQUIPE_TV) : abertos);
     desenharNumeros(d.resumo || {}, abertos.length);
     desenharLinha(d.etapas || [], d.fila || []);
     desenharRanking(d.ranking || []);
@@ -476,7 +519,11 @@
     desenharPostos(d.postos || [], d.ranking || []);
     desenharLeituras(d.leituras || []);
     desenharChamados(chamados);
-    if (d.data) {
+    if (EQUIPE_TV) {
+      const eq = EQUIPES[EQUIPE_TV];
+      $('subtitulo').textContent = `Chamados para ${eq.para}`;
+      $('equipe-vazio').textContent = `Nenhum chamado para ${eq.para} agora`;
+    } else if (d.data) {
       const [a, m, dia] = d.data.split('-');
       $('subtitulo').textContent = `Painel da produção de ${dia}/${m}/${a}`;
     }
@@ -489,7 +536,8 @@
     const ids = new Set(abertos.map((c) => c.id));
     if (vistos) { for (const id of ids) if (!vistos.has(id)) { tocar(); break; } }
     vistos = new Set([...(vistos || []), ...ids]);
-    document.title = abertos.length ? `(${abertos.length}) Chamado · Zaraplast` : 'Zaraplast · Painel da produção';
+    const titulo = EQUIPE_TV ? EQUIPES[EQUIPE_TV].tv : 'Painel da produção';
+    document.title = abertos.length ? `(${abertos.length}) Chamado · Zaraplast` : `Zaraplast · ${titulo}`;
 
     // atualiza a base do cronômetro sem recriar os botões (não perde o foco do teclado)
     const chave = abertos.map((c) => c.id).join(',');
@@ -507,7 +555,7 @@
       div.dataset.chamado = c.id;
       const sino = el('div', 'sino'); sino.innerHTML = SVG_SINO;
       const quem = el('div', 'quem');
-      quem.append(el('strong', null, `Posto ${c.posto} chama o supervisor`),
+      quem.append(el('strong', null, EQUIPE_TV ? `Posto ${c.posto} está chamando vocês` : `Posto ${c.posto} chama ${equipeDe(c).para}`),
                   el('span', null, `${c.etapa}, ${c.operador ? c.operador : 'posto sem operador'}, desde ${hora(c.aberto_em)}`));
       const esp = el('div', 'espera');
       const b = el('b', null, cronometro(c.segundos ?? 0));
@@ -779,7 +827,7 @@
         div.append(el('div', `l2${pn.operador ? '' : ' sutil'}`, pn.operador || 'sem operador'));
         const st = p.online ? 'ligado' : (p.ultimo_contato ? `desligado às ${hora(p.ultimo_contato)}` : 'nunca conectou');
         const tm = pn.operador && pn.tempo_medio_s != null ? `${tempo(pn.tempo_medio_s)} por bag` : '';
-        div.append(el('div', `l3${ch ? ' ch' : ''}`, ch ? 'chamando o supervisor' : (tm || st)));
+        div.append(el('div', `l3${ch ? ' ch' : ''}`, ch ? `chamando ${equipeDe(ch).para}` : (tm || st)));
         const ul = p.ultima_leitura;
         div.title = [`Posto ${p.id}, ${st}`, pn.operador ? `${pn.operador} desde ${hora(pn.turno_inicio)}` : '', tm ? `${tm} no turno` : '',
           ul ? `última leitura: ${ul.codigo} ${ROTULO[ul.resultado] || ul.resultado} às ${hora(ul.horario)}` : ''].filter(Boolean).join('\n');
@@ -821,19 +869,20 @@
       ? `hoje: ${plural(chamados.length, 'chamado', 'chamados')}${media != null ? `, atendidos em ${tempo(media)} em média` : ''}`
       : 'hoje';
     if (!chamados.length) {
-      alvo.replaceChildren(el('p', 'vazio', 'Nenhum chamado hoje. Quando um operador tocar em “Chamar supervisor”, o aviso aparece no topo da tela.'));
+      alvo.replaceChildren(el('p', 'vazio', 'Nenhum chamado hoje. Quando um operador tocar em “Pedir ajuda” e escolher a equipe, o aviso aparece no topo da tela.'));
       return;
     }
     const t = el('table');
     const cab = el('tr');
-    [['Hora', ''], ['Posto', ''], ['Etapa', 'esconde-cel'], ['Quem chamou', ''], ['Situação', ''], ['Esperou', 'n']]
+    [['Hora', ''], ['Posto', ''], ['Para', ''], ['Etapa', 'esconde-cel'], ['Quem chamou', ''], ['Situação', ''], ['Esperou', 'n']]
       .forEach(([txt, c]) => { const th = el('th', c, txt); th.scope = 'col'; cab.append(th); });
     t.append(cab);
     chamados.forEach((c) => {
       const tr = el('tr');
       const sit = c.aberto ? 'aberto' : c.fechado_por === 'cancelado' ? 'cancelado' : 'atendido';
       const tdSit = el('td'); tdSit.append(el('span', `st ${sit}`, sit === 'aberto' ? 'aberto' : sit === 'cancelado' ? 'cancelado pelo posto' : `atendido às ${hora(c.fechado_em)}`));
-      tr.append(el('td', null, hora(c.aberto_em)), el('td', null, c.posto), el('td', 'esconde-cel', c.etapa),
+      tr.append(el('td', null, hora(c.aberto_em)), el('td', null, c.posto), el('td', null, equipeDe(c).nome),
+                el('td', 'esconde-cel', c.etapa),
                 el('td', c.operador ? '' : 'sutil', c.operador || 'posto sem operador'), tdSit,
                 el('td', 'n', c.aberto ? 'esperando' : tempo(c.segundos)));
       t.append(tr);
@@ -884,7 +933,9 @@
   const tvNoLink = /(^#|&)tv\b/.test(location.hash);
   if (m) { senha = decodeURIComponent(m[1]); gravarLS(CHAVE, senha); }
   if (m || tvNoLink) history.replaceState(null, '', location.pathname + location.search);
-  modoTV(tvNoLink || lerLS(CHAVE_TV) === '1', false);
+  // TV da equipe: sempre escura e sem mexer na preferência do painel normal
+  if (EQUIPE_TV) document.documentElement.classList.add('equipe', 'tv');
+  else modoTV(tvNoLink || lerLS(CHAVE_TV) === '1', false);
   if (senha) atualizar(); else mostrarSenha();
 })();
 </script>
