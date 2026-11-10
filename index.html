@@ -220,7 +220,7 @@
   td.rep { color: var(--alarme); font-weight: 600; }
   td .sub { display: block; font-size: .8rem; color: var(--sutil); }
 
-  /* gráfico de bags por hora */
+  /* gráfico de processos por hora (passagens: cada bag em cada etapa) */
   .barras { display: flex; align-items: flex-end; gap: .35rem; height: 11rem; padding-top: .5rem; border-bottom: 2px solid var(--tinta); }
   .barra { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; }
   .barra i { display: block; width: 100%; max-width: 3rem; background: var(--fita); border-radius: 4px 4px 0 0; min-height: 2px; }
@@ -352,7 +352,7 @@
     <section class="numeros" id="numeros" aria-label="Números de hoje"></section>
 
     <section aria-labelledby="t-linha">
-      <h2 id="t-linha" style="margin-bottom:.6rem">Linha de costura <small class="sutil" style="font:400 .85rem var(--texto)">bags que passaram em cada etapa hoje e quantos esperam entre uma e outra</small></h2>
+      <h2 id="t-linha" style="margin-bottom:.6rem">Linha de costura <small class="sutil" style="font:400 .85rem var(--texto)">processos feitos em cada etapa hoje e quantos bags esperam entre uma e outra</small></h2>
       <div id="linha" class="linha"></div>
     </section>
 
@@ -367,7 +367,7 @@
         <div id="pessoas" class="rolagem"></div>
       </section>
       <section class="bloco" aria-labelledby="t-hora">
-        <h2 id="t-hora">Bags por hora <small>hoje</small></h2>
+        <h2 id="t-hora">Processos por hora <small>hoje · cada bag em cada etapa conta 1</small></h2>
         <div id="por-hora"></div>
       </section>
     </div>
@@ -699,14 +699,14 @@
       const nome = el('div', 'nome');
       nome.append(el('span', 'ordem', i + 1), document.createTextNode(e.nome));
       const det = el('div', 'det');
-      det.append(el('span', null, e.bags === 1 ? 'bag hoje' : 'bags hoje'));
+      det.append(el('span', null, e.bags === 1 ? 'processo hoje' : 'processos hoje'));
       if (e.ocorrencias) det.append(el('span', 'oc', plural(e.ocorrencias, 'ocorrência', 'ocorrências')));
       const tm = tempoMedioEtapa(ranking, e.nome);
       const caixaTm = el('div', 'tm');
       const valTm = el('div', `val${tm == null ? ' zero' : ''}`, tempo(tm));
       if (tm != null) valTm.append(el('small', null, unidadeTempo(tm)));
       caixaTm.append(el('div', 'rot', 'Tempo médio'), valTm);
-      caixaTm.title = tm == null ? 'Aparece quando um posto desta etapa fizer 2 bags hoje'
+      caixaTm.title = tm == null ? 'Aparece quando um posto desta etapa fizer 2 processos hoje'
                                  : 'Intervalo médio entre um bag e o próximo nos postos desta etapa';
       const valores = el('div', 'valores');
       valores.append(el('div', `n${e.bags ? '' : ' zero'}`, e.bags), caixaTm);
@@ -787,7 +787,7 @@
     alvo.replaceChildren(t);
   }
 
-  // ------------------------------------------------------------------ bags por hora
+  // ------------------------------------------------------------------ processos por hora
   function desenharHoras(horas, geradoEm) {
     const alvo = $('por-hora');
     if (!horas.length) { alvo.replaceChildren(el('p', 'vazio', 'O gráfico aparece quando o primeiro bag for registrado.')); return; }
@@ -808,7 +808,7 @@
       i.style.height = `${Math.round((h.bags / max) * 100)}%`;
       if (!h.bags) i.style.height = '0';
       b.append(el('b', h.bags ? '' : 'zero', h.bags), i);
-      b.title = `${plural(h.bags, 'bag', 'bags')} das ${h.hora}h às ${h.hora + 1}h${h.hora === agora ? ' (hora atual)' : ''}`;
+      b.title = `${plural(h.bags, 'processo', 'processos')} das ${h.hora}h às ${h.hora + 1}h${h.hora === agora ? ' (hora atual)' : ''}`;
       caixa.append(b);
       eixo.append(el('span', null, `${h.hora}h`));
     });
