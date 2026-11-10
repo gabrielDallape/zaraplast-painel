@@ -101,16 +101,13 @@
   .alarme-erro { font-size: .9rem; background: #fff; color: var(--alarme-escuro); border-radius: 6px; padding: .3rem .6rem; justify-self: start; }
 
   /* ---------- números do dia ---------- */
-  .numeros { display: grid; grid-template-columns: minmax(12rem, 1.3fr) repeat(6, minmax(0, 1fr)); gap: 0;
+  .numeros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0;
              background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio); overflow: hidden; }
   .kpi { padding: .85rem 1rem; border-left: 1px solid var(--linha); min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: .3rem; }
   .kpi:first-child { border-left: 0; }
   .kpi .rot { font-size: .87rem; color: var(--sutil); }
   .kpi .val { font: 600 2.1rem/1 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .kpi .val small { font: 500 .95rem var(--texto); color: var(--sutil); margin-left: .2rem; }
-  .kpi.destaque { background: var(--fita); color: var(--fita-tinta); }
-  .kpi.destaque .rot, .kpi.destaque .val small { color: inherit; opacity: .85; }
-  .kpi.destaque .val { font-size: 3.6rem; }
   .kpi .val.zero { color: var(--apagado); }
   .kpi.alarme-on { background: var(--alarme); color: #fff; }
   .kpi.alarme-on .rot, .kpi.alarme-on .val small { color: inherit; }
@@ -123,8 +120,14 @@
   .etapa .nome { display: flex; align-items: center; gap: .5rem; font: 600 1.05rem var(--display); margin-top: .25rem; }
   .etapa .ordem { width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--fita); color: var(--fita-tinta);
                   display: grid; place-items: center; font: 600 .9rem var(--display); flex: none; }
+  .etapa .valores { display: flex; align-items: flex-end; justify-content: space-between; gap: .4rem 1rem; flex-wrap: wrap; }
   .etapa .n { font: 600 3rem/1 var(--display); margin: .45rem 0 .2rem; font-variant-numeric: tabular-nums; }
   .etapa .n.zero { color: var(--apagado); }
+  .etapa .tm { text-align: right; margin-bottom: .2rem; }
+  .etapa .tm .rot { font-size: .8rem; color: var(--sutil); }
+  .etapa .tm .val { font: 600 1.9rem/1 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .etapa .tm .val small { font: 500 .85rem var(--texto); color: var(--sutil); margin-left: .2rem; }
+  .etapa .tm .val.zero { color: var(--apagado); }
   .etapa .det { font-size: .9rem; color: var(--sutil); display: flex; flex-wrap: wrap; gap: .2rem .9rem; }
   .etapa .det .oc { color: var(--aviso); }
   .costura { flex: 0 0 8.5rem; display: grid; place-items: center; position: relative; padding: 0 .3rem; }
@@ -281,22 +284,15 @@
   html.tv .so-mesa { display: none !important; }
   html.tv main, html.tv .topo-in, html.tv .alarme-in { max-width: none; padding-left: 1.4rem; padding-right: 1.4rem; }
 
-  @media (max-width: 1100px) {
-    .numeros { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .kpi { border-top: 1px solid var(--linha); }
-    .kpi.destaque { grid-column: 1 / -1; border-top: 0; flex-direction: row; align-items: baseline; }
-    .kpi:nth-child(3n+2) { border-left: 0; }
-  }
   @media (max-width: 760px) {
     :root { font-size: 14.5px; }
     main { padding: .75rem; gap: .8rem; }
     .topo-in { padding: .65rem .75rem; }
     .alarme-in { padding: .6rem .75rem; }
     .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .kpi:nth-child(3n+2) { border-left: 1px solid var(--linha); }
-    .kpi:nth-child(2n) { border-left: 0; }
+    .kpi:nth-child(2n+1) { border-left: 0; }
+    .kpi:nth-child(n+3) { border-top: 1px solid var(--linha); }
     .kpi .val { font-size: 1.75rem; }
-    .kpi.destaque .val { font-size: 2.8rem; }
     .linha { flex-direction: column; }
     .costura { flex-basis: auto; padding: .45rem 0; }
     .costura::before { left: 50%; right: auto; top: 0; bottom: 0; border-top: 0; border-left: 3px dashed var(--apagado); }
@@ -512,7 +508,7 @@
     const abertos = chamados.filter((c) => c.aberto);
     desenharAlarme(EQUIPE_TV ? abertos.filter((c) => (c.tipo || 'supervisor') === EQUIPE_TV) : abertos);
     desenharNumeros(d.resumo || {}, abertos.length);
-    desenharLinha(d.etapas || [], d.fila || []);
+    desenharLinha(d.etapas || [], d.fila || [], d.ranking || []);
     desenharRanking(d.ranking || []);
     desenharPessoas(d.pessoas || []);
     desenharHoras(d.por_hora || [], d.gerado_em);
@@ -661,12 +657,9 @@
       d.append(el('div', 'rot', rot), v);
       return d;
     };
-    const tm = r.tempo_medio_s;
+    // total do dia, última hora e tempo médio geral saíram: o tempo médio fica em cada etapa (linha de costura)
     const abertos = r.chamados_abertos ?? nAbertos;
     $('numeros').replaceChildren(
-      k('Bags costurados hoje', r.bags ?? 0, null, 'destaque'),
-      k('Na última hora', r.ultima_hora ?? 0, (r.ultima_hora === 1 ? 'bag' : 'bags')),
-      k('Tempo médio', tempo(tm), unidadeTempo(tm)),
       k('Operadores no turno', r.operadores_ativos ?? 0),
       k('Postos ligados', r.postos_online ?? 0, `de ${r.postos ?? 0}`),
       k('Ocorrências', r.ocorrencias ?? 0, null),
@@ -675,7 +668,18 @@
   }
 
   // ------------------------------------------------------------------ linha de costura
-  function desenharLinha(etapas, fila) {
+  // tempo médio da etapa = intervalo médio entre bags no mesmo posto, juntando os postos da etapa
+  // (mesma conta do servidor: soma dos intervalos ÷ número de intervalos)
+  function tempoMedioEtapa(ranking, nome) {
+    const postos = (ranking.find((r) => r.etapa === nome) || {}).postos || [];
+    let soma = 0, n = 0;
+    postos.forEach((p) => {
+      if (p.tempo_medio_s != null && p.bags > 1) { soma += p.tempo_medio_s * (p.bags - 1); n += p.bags - 1; }
+    });
+    return n ? soma / n : null;
+  }
+
+  function desenharLinha(etapas, fila, ranking) {
     const alvo = $('linha');
     alvo.replaceChildren();
     if (!etapas.length) { alvo.append(el('p', 'vazio', 'Nenhuma etapa cadastrada.')); return; }
@@ -697,7 +701,16 @@
       const det = el('div', 'det');
       det.append(el('span', null, e.bags === 1 ? 'bag hoje' : 'bags hoje'));
       if (e.ocorrencias) det.append(el('span', 'oc', plural(e.ocorrencias, 'ocorrência', 'ocorrências')));
-      c.append(nome, el('div', `n${e.bags ? '' : ' zero'}`, e.bags), det);
+      const tm = tempoMedioEtapa(ranking, e.nome);
+      const caixaTm = el('div', 'tm');
+      const valTm = el('div', `val${tm == null ? ' zero' : ''}`, tempo(tm));
+      if (tm != null) valTm.append(el('small', null, unidadeTempo(tm)));
+      caixaTm.append(el('div', 'rot', 'Tempo médio'), valTm);
+      caixaTm.title = tm == null ? 'Aparece quando um posto desta etapa fizer 2 bags hoje'
+                                 : 'Intervalo médio entre um bag e o próximo nos postos desta etapa';
+      const valores = el('div', 'valores');
+      valores.append(el('div', `n${e.bags ? '' : ' zero'}`, e.bags), caixaTm);
+      c.append(nome, valores, det);
       alvo.append(c);
     });
   }
